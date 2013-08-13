@@ -38,6 +38,7 @@ MODULE clover_module
   IMPLICIT NONE
 
   REAL(KIND=8) :: sum_total, sum_value
+  REAL(KIND=8) :: min_value, min_final
 
 CONTAINS
 
@@ -676,15 +677,12 @@ SUBROUTINE clover_min(value)
 
   REAL(KIND=8) :: value
 
-  REAL(KIND=8) :: minimum
+  pSync_min = SHMEM_SYNC_VALUE
+  min_value = value
 
-  INTEGER :: err
+  CALL SHMEM_REAL8_MIN_TO_ALL(min_final, min_value, 1, 0, 0, parallel%max_task, pWrk_min, pSync_min)
 
-  minimum=value
-
-  CALL MPI_ALLREDUCE(value,minimum,1,MPI_DOUBLE_PRECISION,MPI_MIN,MPI_COMM_WORLD,err)
-
-  value=minimum
+  value = min_final
 
 END SUBROUTINE clover_min
 
