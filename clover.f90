@@ -63,8 +63,10 @@ SUBROUTINE clover_finalize
   CALL FLUSH(0)
   CALL FLUSH(6)
   CALL FLUSH(g_out)
-  CALL MPI_FINALIZE(err)
+
   CALL SHMEM_FINALIZE
+
+  CALL MPI_FINALIZE(err)
 
 END SUBROUTINE clover_finalize
 
