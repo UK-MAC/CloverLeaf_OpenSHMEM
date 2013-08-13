@@ -191,6 +191,12 @@ MODULE definitions_module
   REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
   INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
 
+  REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
+
+  INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
+
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
 

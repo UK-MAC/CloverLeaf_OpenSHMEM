@@ -39,6 +39,8 @@ MODULE clover_module
 
   REAL(KIND=8) :: sum_total, sum_value
   REAL(KIND=8) :: min_value, min_final
+  REAL(KIND=8) :: max_value, max_final
+  INTEGER      :: error_value, error_final
 
 CONTAINS
 
@@ -692,15 +694,12 @@ SUBROUTINE clover_max(value)
 
   REAL(KIND=8) :: value
 
-  REAL(KIND=8) :: maximum
+  pSync_max = SHMEM_SYNC_VALUE
+  max_value = value
 
-  INTEGER :: err
+  CALL SHMEM_REAL8_MAX_TO_ALL(max_final, max_value, 1, 0, 0, parallel%max_task, pWrk_max, pSync_max)
 
-  maximum=value
-
-  CALL MPI_ALLREDUCE(value,maximum,1,MPI_DOUBLE_PRECISION,MPI_MAX,MPI_COMM_WORLD,err)
-
-  value=maximum
+  value = max_final
 
 END SUBROUTINE clover_max
 
@@ -726,15 +725,12 @@ SUBROUTINE clover_check_error(error)
 
   INTEGER :: error
 
-  INTEGER :: maximum
+  pSync_error = SHMEM_SYNC_VALUE
+  error_value = error
 
-  INTEGER :: err
+  CALL SHMEM_INT4_MAX_TO_ALL(error_final, error_value, 1, 0, 0, parallel%max_task, pWrk_error, pSync_error)
 
-  maximum=error
-
-  CALL MPI_ALLREDUCE(error,maximum,1,MPI_INTEGER,MPI_MAX,MPI_COMM_WORLD,err)
-
-  error=maximum
+  error = error_final
 
 END SUBROUTINE clover_check_error
 
