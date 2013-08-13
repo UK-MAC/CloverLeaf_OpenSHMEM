@@ -37,13 +37,13 @@ MODULE clover_module
 
   IMPLICIT NONE
 
+  REAL(KIND=8) :: sum_total, sum_value
+
 CONTAINS
 
 SUBROUTINE clover_barrier
 
-  INTEGER :: err
-
-  CALL MPI_BARRIER(MPI_COMM_WORLD,err)
+  CALL SHMEM_BARRIER_ALL()
 
 END SUBROUTINE clover_barrier
 
@@ -64,6 +64,7 @@ SUBROUTINE clover_finalize
   CALL FLUSH(6)
   CALL FLUSH(g_out)
   CALL MPI_FINALIZE(err)
+  CALL SHMEM_FINALIZE
 
 END SUBROUTINE clover_finalize
 
@@ -78,8 +79,10 @@ SUBROUTINE clover_init_comms
 
   CALL MPI_INIT(err) 
 
-  CALL MPI_COMM_RANK(MPI_COMM_WORLD,rank,err) 
-  CALL MPI_COMM_SIZE(MPI_COMM_WORLD,size,err) 
+  CALL START_PES(0)
+
+  rank=SHMEM_MY_PE()
+  size=SHMEM_N_PES()
 
   parallel%parallel=.TRUE.
   parallel%task=rank
@@ -655,13 +658,13 @@ SUBROUTINE clover_sum(value)
 
   REAL(KIND=8) :: total
 
-  INTEGER :: err
+  pSync_sum = SHMEM_SYNC_VALUE
+  sum_value=value
+  sum_total=0
 
-  total=value
+  CALL SHMEM_REAL8_SUM_TO_ALL(sum_total,sum_value,1,0,0,parallel%max_task,pWrk_sum,pSync_sum)
 
-  CALL MPI_REDUCE(value,total,1,MPI_DOUBLE_PRECISION,MPI_SUM,0,MPI_COMM_WORLD,err)
-
-  value=total
+  value=sum_total
 
 END SUBROUTINE clover_sum
 

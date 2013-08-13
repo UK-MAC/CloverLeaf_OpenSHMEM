@@ -29,6 +29,8 @@ MODULE definitions_module
    
    IMPLICIT NONE
 
+   INCLUDE 'mpp/shmem.fh'
+
    TYPE state_type
       LOGICAL            :: defined
 
@@ -182,6 +184,9 @@ MODULE definitions_module
      TYPE(field_type):: field
 
   END TYPE chunk_type
+
+  REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
 
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
