@@ -707,15 +707,11 @@ SUBROUTINE clover_allgather(value,values)
 
   IMPLICIT NONE
 
-  REAL(KIND=8) :: value
-
-  REAL(KIND=8) :: values(parallel%max_task)
-
-  INTEGER :: err
+  REAL(KIND=8) :: value, values(parallel%max_task)
 
   values(1)=value ! Just to ensure it will work in serial
 
-  CALL MPI_ALLGATHER(value,1,MPI_DOUBLE_PRECISION,values,1,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,err)
+  CALL SHMEM_FCOLLECT8(values, value, 1, 0, 0, parallel%max_task, pSync_collect)
 
 END SUBROUTINE clover_allgather
 

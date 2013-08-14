@@ -197,6 +197,8 @@ MODULE definitions_module
   INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
   INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
 
+  INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
+
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
 
