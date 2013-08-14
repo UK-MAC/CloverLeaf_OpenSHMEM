@@ -29,8 +29,6 @@ MODULE definitions_module
    
    IMPLICIT NONE
 
-   INCLUDE 'mpp/shmem.fh'
-
    TYPE state_type
       LOGICAL            :: defined
 
@@ -196,20 +194,6 @@ MODULE definitions_module
   POINTER (prs,right_snd_buffer)
   POINTER (pbs,bottom_snd_buffer)
   POINTER (pts,top_snd_buffer)
-
-  REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
-
-  REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
-
-  REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
-
-  INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
-
-  INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks

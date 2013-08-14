@@ -33,14 +33,29 @@ MODULE clover_module
 
   USE data_module
   USE definitions_module
-  USE MPI
 
   IMPLICIT NONE
+
+  INCLUDE 'mpp/shmem.fh'
 
   REAL(KIND=8) :: sum_total, sum_value
   REAL(KIND=8) :: min_value, min_final
   REAL(KIND=8) :: max_value, max_final
   INTEGER      :: error_value, error_final
+
+  REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
+
+  REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
+
+  REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
+
+  INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+  INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
+
+  INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
 CONTAINS
 
@@ -52,9 +67,7 @@ END SUBROUTINE clover_barrier
 
 SUBROUTINE clover_abort
 
-  INTEGER :: ierr,err
-
-  CALL MPI_ABORT(MPI_COMM_WORLD,ierr,err)
+  CALL SHMEM_FINALIZE
 
 END SUBROUTINE clover_abort
 
@@ -69,8 +82,6 @@ SUBROUTINE clover_finalize
 
   CALL SHMEM_FINALIZE
 
-  CALL MPI_FINALIZE(err)
-
 END SUBROUTINE clover_finalize
 
 SUBROUTINE clover_init_comms
@@ -81,8 +92,6 @@ SUBROUTINE clover_init_comms
 
   rank=0
   size=1
-
-  CALL MPI_INIT(err) 
 
   CALL START_PES(0)
 
@@ -472,8 +481,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 
   INTEGER      :: chunk,depth,field_type
 
-  INTEGER      :: size,err,request(8),tag,message_count,x_inc,y_inc
-  INTEGER      :: status(MPI_STATUS_SIZE,8)
+  INTEGER      :: size,x_inc,y_inc
   INTEGER      :: receiver,sender
 
   ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
@@ -490,9 +498,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
   ! No open mp in here either. May be beneficial will packing and unpacking in the future, though I am not sure.
 
   ! Change this so it will allow more than 1 chunk per task
-
-  request=0
-  message_count=0
 
   ! Pack and send
 
@@ -575,8 +580,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ENDIF
   ENDIF
 
-  request=0
-  message_count=0
 
   ! Pack real data into buffers
   IF(parallel%task.EQ.chunks(chunk)%task) THEN
