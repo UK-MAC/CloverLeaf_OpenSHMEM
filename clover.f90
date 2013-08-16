@@ -33,6 +33,7 @@ MODULE clover_module
 
   USE data_module
   USE definitions_module
+  USE iso_c_binding
 
   IMPLICIT NONE
 
@@ -219,19 +220,25 @@ SUBROUTINE clover_allocate_buffers(chunk)
 
   IMPLICIT NONE
 
-  INTEGER      :: chunk, err
+  INTEGER      :: chunk, err, idefault
+  INTEGER      :: buffer_size_x, buffer_size_y
+  REAL(KIND=8) :: r8default 
   
   ! Unallocated buffers for external boundaries caused issues on some systems so they are now
   !  all allocated
   IF(parallel%task.EQ.chunks(chunk)%task)THEN
-    CALL SHPALLOC( pls, 5000, err, 0)
-    CALL SHPALLOC( plr, 5000, err, 0)
-    CALL SHPALLOC( prs, 5000, err, 0)
-    CALL SHPALLOC( prr, 5000, err, 0)
-    CALL SHPALLOC( pbs, 5000, err, 0)
-    CALL SHPALLOC( pbr, 5000, err, 0)
-    CALL SHPALLOC( pts, 5000, err, 0)
-    CALL SHPALLOC( ptr, 5000, err, 0)
+
+    buffer_size_x = kind(r8default)/kind(idefault)*2*(chunks(chunk)%field%x_max+5)
+    buffer_size_y = kind(r8default)/kind(idefault)*2*(chunks(chunk)%field%y_max+5)
+
+    CALL SHPALLOC( pls, buffer_size_y, err, 0)
+    CALL SHPALLOC( plr, buffer_size_y, err, 0)
+    CALL SHPALLOC( prs, buffer_size_y, err, 0)
+    CALL SHPALLOC( prr, buffer_size_y, err, 0)
+    CALL SHPALLOC( pbs, buffer_size_x, err, 0)
+    CALL SHPALLOC( pbr, buffer_size_x, err, 0)
+    CALL SHPALLOC( pts, buffer_size_x, err, 0)
+    CALL SHPALLOC( ptr, buffer_size_x, err, 0)
 
     !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
     !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
