@@ -58,6 +58,10 @@ MODULE clover_module
 
   INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
+  INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag
+
+  COMMON/FLAG/left_rcv_flag, right_rcv_flag
+
 CONTAINS
 
 SUBROUTINE clover_barrier
@@ -91,6 +95,9 @@ SUBROUTINE clover_init_comms
 
   INTEGER :: err,rank,size
 
+  left_rcv_flag = 0
+  right_rcv_flag = 0
+
   rank=0
   size=1
 
@@ -108,6 +115,7 @@ SUBROUTINE clover_init_comms
 
   parallel%boss_task=0
   parallel%max_task=size
+
 
 END SUBROUTINE clover_init_comms
 
@@ -467,6 +475,8 @@ SUBROUTINE clover_exchange(fields,depth)
                                  depth,Y_FACE_DATA)
   ENDIF
 
+  CALL SHMEM_BARRIER_ALL()
+
 
 END SUBROUTINE clover_exchange
 
@@ -566,8 +576,58 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ENDIF
   ENDIF
 
-  ! Wait for the messages
-  CALL SHMEM_BARRIER_ALL()
+  !WRITE(*,*) "Process: ", parallel%task, " before the shmem fence"
+  CALL SHMEM_QUIET
+  !WRITE(*,*) "Process: ", parallel%task, " after the shmem fence"
+
+  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+
+    ! Send/receive the data
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+
+      !WRITE(*,*) "Process: ", parallel%task, " before integer put left"
+      CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+      !WRITE(*,*) "Process: ", parallel%task, " after integer put left"
+
+    ENDIF
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+
+      !WRITE(*,*) "Process: ", parallel%task, " before integer put right "
+      CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+      !WRITE(*,*) "Process: ", parallel%task, " after integer put right "
+
+    ENDIF
+  ENDIF
+
+  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+
+    ! Send/receive the data
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+
+      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait left"
+      IF (left_rcv_flag .EQ. 0) THEN
+        CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
+      ENDIF
+      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
+      left_rcv_flag = 0
+
+    ENDIF
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+
+      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait right"
+      IF (right_rcv_flag .EQ. 0) THEN
+        CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
+      ENDIF
+      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait right"
+      right_rcv_flag = 0
+
+    ENDIF
+  ENDIF
+
 
   ! Unpack buffers in halo cells
   IF(parallel%task.EQ.chunks(chunk)%task) THEN
