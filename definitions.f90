@@ -166,7 +166,7 @@ MODULE definitions_module
 
    END TYPE field_type
    
-   TYPE chunk_type
+  TYPE chunk_type
 
      INTEGER         :: task   !mpi task
 
@@ -197,6 +197,7 @@ MODULE definitions_module
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
+  INTEGER                              :: num_chunks_x, num_chunks_y
 
   TYPE(grid_type)                      :: grid
 

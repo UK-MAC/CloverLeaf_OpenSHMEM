@@ -207,6 +207,9 @@ SUBROUTINE clover_decompose(x_cells,y_cells,left,right,bottom,top)
     IF(cy.LE.mod_y)add_y_prev=add_y_prev+1
   ENDDO
 
+  num_chunks_x = chunk_x
+  num_chunks_y = chunk_y
+
   IF(parallel%boss)THEN
     WRITE(g_out,*)
     WRITE(g_out,*)"Mesh ratio of ",mesh_ratio
