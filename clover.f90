@@ -577,7 +577,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
       IF (left_write_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
       CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
       
       left_write_flag = 0 
@@ -590,7 +589,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
       IF (right_write_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
       CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
 
       right_write_flag = 0 
@@ -598,9 +596,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ENDIF
   ENDIF
 
-  !WRITE(*,*) "Process: ", parallel%task, " before the shmem fence"
   CALL SHMEM_QUIET
-  !WRITE(*,*) "Process: ", parallel%task, " after the shmem fence"
 
   IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
@@ -608,18 +604,14 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
 
-      !WRITE(*,*) "Process: ", parallel%task, " before integer put left"
       CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
-      !WRITE(*,*) "Process: ", parallel%task, " after integer put left"
 
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
 
-      !WRITE(*,*) "Process: ", parallel%task, " before integer put right "
       CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
-      !WRITE(*,*) "Process: ", parallel%task, " after integer put right "
 
     ENDIF
   ENDIF
@@ -629,22 +621,18 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ! Send/receive the data
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
 
-      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait left"
       IF (left_rcv_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
       left_rcv_flag = 0
 
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
 
-      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait right"
       IF (right_rcv_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait right"
       right_rcv_flag = 0
 
     ENDIF
@@ -735,7 +723,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 
   ! Wait for the messages
   CALL SHMEM_QUIET
-  !WRITE(*,*) "Process: ", parallel%task, " after the shmem fence"
 
   IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
@@ -743,19 +730,13 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
-      !WRITE(*,*) "Process: ", parallel%task, " before integer put left"
       CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
-      !WRITE(*,*) "Process: ", parallel%task, " after integer put left"
-
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
 
-      !WRITE(*,*) "Process: ", parallel%task, " before integer put right "
       CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
-      !WRITE(*,*) "Process: ", parallel%task, " after integer put right "
-
     ENDIF
   ENDIF
 
@@ -764,24 +745,20 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ! Send/receive the data
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
 
-      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait left"
       IF (bottom_rcv_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
-      bottom_rcv_flag = 0
 
+      bottom_rcv_flag = 0
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
 
-      !WRITE(*,*) "Process: ", parallel%task, " before shmem wait right"
       IF (top_rcv_flag .EQ. 0) THEN
         CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
       ENDIF
-      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait right"
-      top_rcv_flag = 0
 
+      top_rcv_flag = 0
     ENDIF
   ENDIF
 
