@@ -58,9 +58,9 @@ MODULE clover_module
 
   INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-  INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag
+  INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
 
-  COMMON/FLAG/left_rcv_flag, right_rcv_flag
+  COMMON/FLAG/left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
 
 CONTAINS
 
@@ -97,6 +97,8 @@ SUBROUTINE clover_init_comms
 
   left_rcv_flag = 0
   right_rcv_flag = 0
+  left_write_flag = 1 
+  right_write_flag = 1
 
   rank=0
   size=1
@@ -560,18 +562,32 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                      field,left_snd_buffer,right_snd_buffer)
     ENDIF
 
+
+
     ! Send/receive the data
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
 
+      IF (left_write_flag .EQ. 0) THEN
+        CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+      ENDIF
+      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
       CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+      
+      left_write_flag = 0; 
 
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
       receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
 
+      IF (right_write_flag .EQ. 0) THEN
+        CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+      ENDIF
+      !WRITE(*,*) "Process: ", parallel%task, " after shmem wait left"
       CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+
+      right_write_flag = 0; 
 
     ENDIF
   ENDIF
@@ -648,6 +664,20 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                        x_inc,y_inc,depth,size,                              &
                                        field,left_rcv_buffer,right_rcv_buffer)
     ENDIF
+
+    
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+
+      CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
+    ENDIF
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+
+      CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
+    ENDIF
+
   ENDIF
 
 
