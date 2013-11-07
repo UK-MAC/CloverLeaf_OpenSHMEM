@@ -186,6 +186,33 @@ MODULE definitions_module
   REAL(KIND=8):: left_rcv_buffer(1),right_rcv_buffer(1),bottom_rcv_buffer(1),top_rcv_buffer(1)
   REAL(KIND=8):: left_snd_buffer(1),right_snd_buffer(1),bottom_snd_buffer(1),top_snd_buffer(1)
 
+    REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
+    REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
+    REAL(KIND=8),    DIMENSION(1,1) :: pressure
+    REAL(KIND=8),    DIMENSION(1,1) :: viscosity_array
+    REAL(KIND=8),    DIMENSION(1,1) :: soundspeed
+    REAL(KIND=8),    DIMENSION(1,1) :: xvel0,xvel1
+    REAL(KIND=8),    DIMENSION(1,1) :: yvel0,yvel1
+    REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_x,mass_flux_x
+    REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_y,mass_flux_y
+
+    POINTER(pDensity0,   density0)
+    POINTER(pDensity1,   density1)
+    POINTER(pEnergy0,    energy0)
+    POINTER(pEnergy1,    energy1)
+    POINTER(pPressure,   pressure)
+    POINTER(pViscosity,  viscosity_array)
+    POINTER(pSoundspeed, soundspeed)
+    POINTER(pXvel0,      xvel0)
+    POINTER(pXvel1,      xvel1)
+    POINTER(pYvel0,      yvel0)
+    POINTER(pYvel1,      yvel1)
+    POINTER(pVolFluxX,   vol_flux_x)
+    POINTER(pMassFluxX,  mass_flux_x)
+    POINTER(pVolFluxY,   vol_flux_y)
+    POINTER(pMassFluxY,  mass_flux_y)
+
+
   POINTER (plr,left_rcv_buffer)
   POINTER (prr,right_rcv_buffer)
   POINTER (pbr,bottom_rcv_buffer)

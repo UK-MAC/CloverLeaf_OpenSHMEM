@@ -26,7 +26,8 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
 
    IMPLICIT NONE
 
-   INTEGER :: chunk,x_cells,y_cells
+   INTEGER :: chunk,x_cells,y_cells, idefault, err, element_size
+    REAL(KIND=8) :: r8default
 
    chunks(chunk)%field%x_min=1
    chunks(chunk)%field%y_min=1
@@ -34,38 +35,59 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%x_max=x_cells
    chunks(chunk)%field%y_max=y_cells
 
-   ALLOCATE(chunks(chunk)%field%density0  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%density1  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%energy0   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%energy1   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%pressure  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%viscosity (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%soundspeed(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+    element_size = kind(r8default)/kind(idefault)
 
-   ALLOCATE(chunks(chunk)%field%xvel0(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                      chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
-   ALLOCATE(chunks(chunk)%field%xvel1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                      chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
-   ALLOCATE(chunks(chunk)%field%yvel0(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                      chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
-   ALLOCATE(chunks(chunk)%field%yvel1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                      chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
 
-   ALLOCATE(chunks(chunk)%field%vol_flux_x (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                            chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%mass_flux_x(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
-                                            chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
-   ALLOCATE(chunks(chunk)%field%vol_flux_y (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                                            chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
-   ALLOCATE(chunks(chunk)%field%mass_flux_y(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
-                                            chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+
+    CALL SHPALLOC(pDensity0,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pDensity1,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pEnergy0,     element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pEnergy1,     element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pPressure,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pViscosity,   element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pSoundspeed,  element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pXvel0,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pXvel1,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pYvel0,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pYvel1,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pVolFluxX,    element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pMassFluxX,   element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pVolFluxY,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    CALL SHPALLOC(pMassFluxY,   element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+
+
+   !ALLOCATE(chunks(chunk)%field%density0  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%density1  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%energy0   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%energy1   (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%pressure  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%viscosity (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%soundspeed(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+
+   !ALLOCATE(chunks(chunk)%field%xvel0(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+   !ALLOCATE(chunks(chunk)%field%xvel1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+   !ALLOCATE(chunks(chunk)%field%yvel0(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+   !ALLOCATE(chunks(chunk)%field%yvel1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                   chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+
+   !ALLOCATE(chunks(chunk)%field%vol_flux_x (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                         chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%mass_flux_x(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
+   !                                         chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+2))
+   !ALLOCATE(chunks(chunk)%field%vol_flux_y (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                                         chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
+   !ALLOCATE(chunks(chunk)%field%mass_flux_y(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &
+   !                                         chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
 
    ALLOCATE(chunks(chunk)%field%work_array1(chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+3, &
                                             chunks(chunk)%field%y_min-2:chunks(chunk)%field%y_max+3))
