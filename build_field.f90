@@ -130,23 +130,23 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%work_array6=0.0
    chunks(chunk)%field%work_array7=0.0
 
-   chunks(chunk)%field%density0=0.0
-   chunks(chunk)%field%density1=0.0
-   chunks(chunk)%field%energy0=0.0
-   chunks(chunk)%field%energy1=0.0
-   chunks(chunk)%field%pressure=0.0
-   chunks(chunk)%field%viscosity=0.0
-   chunks(chunk)%field%soundspeed=0.0
+   density0=0.0
+   density1=0.0
+   energy0=0.0
+   energy1=0.0
+   pressure=0.0
+   viscosity=0.0
+   soundspeed=0.0
    
-   chunks(chunk)%field%xvel0=0.0
-   chunks(chunk)%field%xvel1=0.0
-   chunks(chunk)%field%yvel0=0.0
-   chunks(chunk)%field%yvel1=0.0
+   xvel0=0.0
+   xvel1=0.0
+   yvel0=0.0
+   yvel1=0.0
    
-   chunks(chunk)%field%vol_flux_x=0.0
-   chunks(chunk)%field%mass_flux_x=0.0
-   chunks(chunk)%field%vol_flux_y=0.0
-   chunks(chunk)%field%mass_flux_y=0.0
+   vol_flux_x=0.0
+   mass_flux_x=0.0
+   vol_flux_y=0.0
+   mass_flux_y=0.0
 
    chunks(chunk)%field%cellx=0.0
    chunks(chunk)%field%celly=0.0
