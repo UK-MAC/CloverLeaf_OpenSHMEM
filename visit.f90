@@ -75,7 +75,7 @@ SUBROUTINE visit
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
   IF(profiler_on) kernel_time=timer()
-  CALL viscosity()
+  CALL viscosity_subrout()
   IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
 
   IF ( parallel%boss ) THEN

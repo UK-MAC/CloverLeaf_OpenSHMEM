@@ -189,7 +189,7 @@ MODULE definitions_module
     REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
     REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
     REAL(KIND=8),    DIMENSION(1,1) :: pressure
-    REAL(KIND=8),    DIMENSION(1,1) :: viscosity_array
+    REAL(KIND=8),    DIMENSION(1,1) :: viscosity
     REAL(KIND=8),    DIMENSION(1,1) :: soundspeed
     REAL(KIND=8),    DIMENSION(1,1) :: xvel0,xvel1
     REAL(KIND=8),    DIMENSION(1,1) :: yvel0,yvel1
@@ -201,7 +201,7 @@ MODULE definitions_module
     POINTER(pEnergy0,    energy0)
     POINTER(pEnergy1,    energy1)
     POINTER(pPressure,   pressure)
-    POINTER(pViscosity,  viscosity_array)
+    POINTER(pViscosity,  viscosity)
     POINTER(pSoundspeed, soundspeed)
     POINTER(pXvel0,      xvel0)
     POINTER(pXvel1,      xvel1)
