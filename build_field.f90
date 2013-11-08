@@ -36,24 +36,98 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%y_max=y_cells
 
     element_size = kind(r8default)/kind(idefault)
-
+    WRITE(*,*) "element size in build field: ", element_size
 
 
     CALL SHPALLOC(pDensity0,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc density0: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pDensity1,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc density1: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pEnergy0,     element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc energy0: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pEnergy1,     element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc energy1: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pPressure,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc pressure: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pViscosity,   element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc viscosity: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pSoundspeed,  element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc soundspeed: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pXvel0,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc xvel0: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pXvel1,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc xvel1: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pYvel0,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc yvel0: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pYvel1,       element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc yvel1: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pVolFluxX,    element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc volfluxx: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pMassFluxX,   element_size*( (chunks(chunk)%field%x_max+3)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc massfluxx: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pVolFluxY,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc volfluxy: ", err
+        CALL clover_abort
+    ENDIF
+
     CALL SHPALLOC(pMassFluxY,   element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+3)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
+    IF (err .NE. 0) THEN
+        WRITE(*,*) "Error value after shpalloc massfluxy: ", err
+        CALL clover_abort
+    ENDIF
 
 
    !ALLOCATE(chunks(chunk)%field%density0  (chunks(chunk)%field%x_min-2:chunks(chunk)%field%x_max+2, &

@@ -369,7 +369,7 @@ END SUBROUTINE clover_exchange
 SUBROUTINE clover_exchange_message(chunk,field,                            &
                                    depth,field_type)
 
-  USE pack_kernel_module
+  !USE pack_kernel_module
 
   IMPLICIT NONE
 
@@ -417,7 +417,6 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     y_inc=1
   ENDIF
 
-
     CALL SHMEM_BARRIER_ALL
 
   ! Pack real data into buffers
@@ -425,73 +424,113 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 
         num_elements = 1+(chunks(chunk)%field%y_max+y_inc+depth)-(chunks(chunk)%field%y_min-depth)
         !size=(1+(chunks(chunk)%field%y_max+y_inc+depth)-(chunks(chunk)%field%y_min-depth))*depth
+        WRITE(*,*) "Task: ", parallel%task, " num elements comms: ", num_elements
 
         array_width = chunks(chunk)%field%x_max+4+x_inc
+        WRITE(*,*) "Task: ", parallel%task, " array width: ", array_width
 
     ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+        IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
 
-        IF (depth .EQ. 1) THEN
+            WRITE(*,*) "Task: ", parallel%task, "sending left to: ", receiver, " with depth: ", depth
 
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_max+x_inc+1,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_min+x_inc,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
+            IF (depth .EQ. 1) THEN
 
-        ELSE
+                WRITE(*,*) "Task : ", parallel%task, " send to left to: ", receiver, " stride: ", array_width, " depth: ", depth, " num elements: ", num_elements, &
+                                                     " source x: ", chunks(chunk)%field%x_min+x_inc, &
+                                                     " source y: ", chunks(chunk)%field%y_min-depth, &
+                                                     " target x: ", chunks(chunk)%field%x_max+x_inc+1, &
+                                                     " target y: ", chunks(chunk)%field%y_min-depth 
 
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_max+x_inc+1,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_min+x_inc,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
 
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_max+x_inc+2,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_min+x_inc+1,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_max+x_inc+1,chunks(chunk)%field%y_min-depth), &
+                                  field(chunks(chunk)%field%x_min+x_inc,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
+
+            ELSE
+
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_max+x_inc+1,chunks(chunk)%field%y_min-depth), &
+                                  field(chunks(chunk)%field%x_min+x_inc,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
+                WRITE(*,*) "Task: ", parallel%task, " first send to left to: ", receiver,  " stride: ", array_width, " depth: ", depth,  &
+                                                                       " source x: ", chunks(chunk)%field%x_min+x_inc,  &
+                                                                       " source y: ", chunks(chunk)%field%y_min-depth,  &
+                                                                       " target x: ", chunks(chunk)%field%x_max+x_inc+1,& 
+                                                                       " target y: ", chunks(chunk)%field%y_min-depth  
+
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_max+x_inc+2,chunks(chunk)%field%y_min-depth), &
+                                  field(chunks(chunk)%field%x_min+x_inc+1,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
+                WRITE(*,*) "Task: ", parallel%task, " second sec to left to: ", receiver, " stride: ", array_width, " depth: ", depth, &
+                                                                       " source x: ", chunks(chunk)%field%x_min+x_inc+1, &
+                                                                       " source y: ", chunks(chunk)%field%y_min-depth, &
+                                                                       " target x: ", chunks(chunk)%field%x_max+x_inc+2, &
+                                                                       " target y: ", chunks(chunk)%field%y_min-depth
+            ENDIF
+
+
+          !IF (left_write_flag .EQ. 0) THEN
+          !  CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+          !ENDIF
+          !CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+          !
+          !left_write_flag = 0 
+
         ENDIF
 
+        IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+            WRITE(*,*) "Task: ", parallel%task, " sending right to: ", receiver, " with depth: ", depth
 
-      !IF (left_write_flag .EQ. 0) THEN
-      !  CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
-      !ENDIF
-      !CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
-      !
-      !left_write_flag = 0 
+            IF (depth .EQ. 1) THEN
 
-    ENDIF
+                WRITE(*,*) "Task: ", parallel%task, " send right to: ", receiver, " depth: ", depth, "stride: ", array_width, " num elements: ", num_elements, &
+                                                    " source x: ", chunks(chunk)%field%x_max, &
+                                                    " source y: ", chunks(chunk)%field%y_min-depth, &
+                                                    " target x: ", chunks(chunk)%field%x_min-depth, &    
+                                                    " target y: ", chunks(chunk)%field%y_min-depth 
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+                                  field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
 
-        IF (depth .EQ. 1) THEN
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
-        ELSE
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_min-1,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
+            ELSE
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_min-1,chunks(chunk)%field%y_min-depth), &
+                                     field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
+                                     array_width, array_width,                                  &
+                                     num_elements, receiver)
+                WRITE(*,*) "Task: ", parallel%task, " first send to right to: ", receiver, " stride: ", array_width, " depth: ", depth, &
+                                                                " source x: ", chunks(chunk)%field%x_max, &
+                                                                " source y: ", chunks(chunk)%field%y_min-depth, &
+                                                                " target x: ", chunks(chunk)%field%x_min-1, &
+                                                                " target y: ", chunks(chunk)%field%y_min-depth 
 
-            CALL SHMEM_IPUT64_NB(field(chunks(chunk)%field%x_min-2,chunks(chunk)%field%y_min-depth), &
-                                 field(chunks(chunk)%field%x_max-1,chunks(chunk)%field%y_min-depth), &
-                                 array_width, array_width,                                  &
-                                 num_elements, receiver)
+                CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_min-2,chunks(chunk)%field%y_min-depth), &
+                                  field(chunks(chunk)%field%x_max-1,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
+                WRITE(*,*) "Task: ", parallel%task, " second send to right to: ", receiver, " stride: ", array_width, " depth: ", depth, &
+                                                                " source x: ", chunks(chunk)%field%x_max-1, &
+                                                                " source y: ", chunks(chunk)%field%y_min-depth, &
+                                                                " target x: ", chunks(chunk)%field%x_min-2, &
+                                                                " target y: ", chunks(chunk)%field%y_min-depth 
+            ENDIF
+
+
+
+          !IF (right_write_flag .EQ. 0) THEN
+          !  CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+          !ENDIF
+          !CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+
+          !right_write_flag = 0 
+
         ENDIF
-
-
-
-      !IF (right_write_flag .EQ. 0) THEN
-      !  CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
-      !ENDIF
-      !CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
-
-      !right_write_flag = 0 
-
-    ENDIF
   ENDIF
 
   !CALL SHMEM_QUIET
@@ -580,11 +619,17 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
 
     ! Send/receive the data
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
-      CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
-                          field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
-                          size, receiver)
+        WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
+                                    " source x: ", chunks(chunk)%field%x_min-depth,  &
+                                    " source y: ", chunks(chunk)%field%y_min+y_inc, &
+                                    " target x: ", chunks(chunk)%field%x_min-depth, &
+                                    " target y: ", chunks(chunk)%field%y_max+y_inc+1 
+
+        CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+                            field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
+                            size, receiver)
 
       !IF (bottom_write_flag .EQ. 0) THEN
       !  CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
@@ -595,11 +640,18 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
 
-      CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-                          field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
-                          size, receiver)
+        WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
+                                    " source x: ", chunks(chunk)%field%x_min-depth, &
+                                    " source y: ", chunks(chunk)%field%y_max+1-depth, &
+                                    " target x: ", chunks(chunk)%field%x_min-depth, &
+                                    " target y: ", chunks(chunk)%field%y_min-depth
+                                    
+
+        CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+                            field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
+                            size, receiver)
 
 
       !IF (top_write_flag .EQ. 0) THEN
@@ -616,6 +668,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
   ! Wait for the messages
   !CALL SHMEM_QUIET
     CALL SHMEM_BARRIER_ALL
+
 
   !IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
