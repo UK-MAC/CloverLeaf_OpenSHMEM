@@ -186,15 +186,31 @@ MODULE definitions_module
   REAL(KIND=8):: left_rcv_buffer(1),right_rcv_buffer(1),bottom_rcv_buffer(1),top_rcv_buffer(1)
   REAL(KIND=8):: left_snd_buffer(1),right_snd_buffer(1),bottom_snd_buffer(1),top_snd_buffer(1)
 
-    REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
-    REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
-    REAL(KIND=8),    DIMENSION(1,1) :: pressure
-    REAL(KIND=8),    DIMENSION(1,1) :: viscosity
-    REAL(KIND=8),    DIMENSION(1,1) :: soundspeed
-    REAL(KIND=8),    DIMENSION(1,1) :: xvel0,xvel1
-    REAL(KIND=8),    DIMENSION(1,1) :: yvel0,yvel1
-    REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_x,mass_flux_x
-    REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_y,mass_flux_y
+    !REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
+    !REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
+    !REAL(KIND=8),    DIMENSION(1,1) :: pressure
+    !REAL(KIND=8),    DIMENSION(1,1) :: viscosity
+    !REAL(KIND=8),    DIMENSION(1,1) :: soundspeed
+    !REAL(KIND=8),    DIMENSION(1,1) :: xvel0,xvel1
+    !REAL(KIND=8),    DIMENSION(1,1) :: yvel0,yvel1
+    !REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_x,mass_flux_x
+    !REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_y,mass_flux_y
+
+    REAL(KIND=8) :: density0(-1:482,-1:962)
+    REAL(KIND=8) :: density1(-1:482,-1:962)
+    REAL(KIND=8) :: energy0(-1:482,-1:962)
+    REAL(KIND=8) :: energy1(-1:482,-1:962)
+    REAL(KIND=8) :: pressure(-1:482,-1:962)
+    REAL(KIND=8) :: viscosity(-1:482,-1:962)
+    REAL(KIND=8) :: soundspeed(-1:482,-1:962)
+    REAL(KIND=8) :: xvel0(-1:483,-1:963)
+    REAL(KIND=8) :: xvel1(-1:483,-1:963)
+    REAL(KIND=8) :: yvel0(-1:483,-1:963)
+    REAL(KIND=8) :: yvel1(-1:483,-1:963)
+    REAL(KIND=8) :: vol_flux_x(-1:483,-1:962)
+    REAL(KIND=8) :: mass_flux_x(-1:483,-1:962)
+    REAL(KIND=8) :: vol_flux_y(-1:482,-1:963)
+    REAL(KIND=8) :: mass_flux_y(-1:482,-1:963)
 
     POINTER(pDensity0,   density0)
     POINTER(pDensity1,   density1)
