@@ -36,7 +36,7 @@ SUBROUTINE build_field(chunk,x_cells,y_cells)
    chunks(chunk)%field%y_max=y_cells
 
     element_size = kind(r8default)/kind(idefault)
-    WRITE(*,*) "element size in build field: ", element_size
+    !WRITE(*,*) "element size in build field: ", element_size
 
 
     CALL SHPALLOC(pDensity0,    element_size*( (chunks(chunk)%field%x_max+2)-(chunks(chunk)%field%x_min-2)+1 )*( (chunks(chunk)%field%y_max+2)-(chunks(chunk)%field%y_min-2)+1 ), err, 0)
