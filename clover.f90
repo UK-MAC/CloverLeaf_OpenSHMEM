@@ -60,9 +60,10 @@ MODULE clover_module
 
   INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
   INTEGER(KIND=4) :: top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
-
   COMMON/FLAG/left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag, top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
-  COMMON/FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+
+  INTEGER(KIND=4) :: right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+  COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
 
     ! 1 = false 0 = true
 
@@ -109,6 +110,16 @@ SUBROUTINE clover_init_comms
   bottom_write_flag = 1 
   top_write_flag = 1
 
+    right_pe_ready = 1
+    left_pe_ready = 1
+    top_pe_ready = 1
+    bottom_pe_ready = 1
+
+    right_pe_written = 1
+    left_pe_written = 1
+    top_pe_written = 1
+    bottom_pe_written = 1
+
   rank=0
   size=1
 
@@ -127,8 +138,8 @@ SUBROUTINE clover_init_comms
   parallel%boss_task=0
   parallel%max_task=size
 
-
 END SUBROUTINE clover_init_comms
+
 
 SUBROUTINE clover_get_num_chunks(count)
 
@@ -369,61 +380,70 @@ SUBROUTINE clover_exchange(fields,depth)
 
 END SUBROUTINE clover_exchange
 
-SUBROUTINE clover_exchange_message(chunk,field,                            &
-                                   depth,field_type)
+SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
+    
+    IMPLICIT NONE
 
-  !USE pack_kernel_module
+    REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
 
-  IMPLICIT NONE
+    INTEGER      :: chunk,depth,field_type
 
-  REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
-  !REAL(KIND=8) :: left_snd_buffer(:),left_rcv_buffer(:),right_snd_buffer(:),right_rcv_buffer(:)
-  !REAL(KIND=8) :: bottom_snd_buffer(:),bottom_rcv_buffer(:),top_snd_buffer(:),top_rcv_buffer(:)
+    INTEGER      :: size,x_inc,y_inc
+    INTEGER      :: receiver,sender, num_elements, array_width
 
-  INTEGER      :: chunk,depth,field_type
+    ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
 
-  INTEGER      :: size,x_inc,y_inc
-  INTEGER      :: receiver,sender, num_elements, array_width
+    ! I am packing my own buffers. I am sure this could be improved with MPI data types
+    !  but this will do for now
 
-  ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
+    ! I am also sending buffers to chunks with the same task id for now.
+    ! This can be improved in the future but at the moment there is just 1 chunk per task anyway
 
-  ! I am packing my own buffers. I am sure this could be improved with MPI data types
-  !  but this will do for now
+    ! The tag will be a function of the sending chunk and the face it is coming from
+    !  like chunk 6 sending the left face
 
-  ! I am also sending buffers to chunks with the same task id for now.
-  ! This can be improved in the future but at the moment there is just 1 chunk per task anyway
+    ! No open mp in here either. May be beneficial will packing and unpacking in the future, though I am not sure.
 
-  ! The tag will be a function of the sending chunk and the face it is coming from
-  !  like chunk 6 sending the left face
+    ! Change this so it will allow more than 1 chunk per task
 
-  ! No open mp in here either. May be beneficial will packing and unpacking in the future, though I am not sure.
+    ! Pack and send
 
-  ! Change this so it will allow more than 1 chunk per task
+    ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
+    IF(field_type.EQ.CELL_DATA) THEN
+      x_inc=0
+      y_inc=0
+    ENDIF
+    IF(field_type.EQ.VERTEX_DATA) THEN
+      x_inc=1
+      y_inc=1
+    ENDIF
+    IF(field_type.EQ.X_FACE_DATA) THEN
+      x_inc=1
+      y_inc=0
+    ENDIF
+    IF(field_type.EQ.Y_FACE_DATA) THEN
+      x_inc=0
+      y_inc=1
+    ENDIF
 
-  ! Pack and send
+    !CALL SHMEM_BARRIER_ALL
 
-  ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
-  IF(field_type.EQ.CELL_DATA) THEN
-    x_inc=0
-    y_inc=0
-  ENDIF
-  IF(field_type.EQ.VERTEX_DATA) THEN
-    x_inc=1
-    y_inc=1
-  ENDIF
-  IF(field_type.EQ.X_FACE_DATA) THEN
-    x_inc=1
-    y_inc=0
-  ENDIF
-  IF(field_type.EQ.Y_FACE_DATA) THEN
-    x_inc=0
-    y_inc=1
-  ENDIF
+    ! Pack real data into buffers
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
-    CALL SHMEM_BARRIER_ALL
+        !tell left and right neighbours that this pe is ready to receive data
+        IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
 
-  ! Pack real data into buffers
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+            CALL SHMEM_PUT4_NB(right_pe_ready, 0, 1, receiver) 
+        ENDIF
+
+        IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+
+            CALL SHMEM_PUT4_NB(left_pe_ready, 0, 1, receiver)
+        ENDIF
+
 
         num_elements = 1+(chunks(chunk)%field%y_max+y_inc+depth)-(chunks(chunk)%field%y_min-depth)
         !WRITE(*,*) "Task: ", parallel%task, " num elements comms: ", num_elements
@@ -431,9 +451,16 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
         array_width = chunks(chunk)%field%x_max+4+x_inc
         !WRITE(*,*) "Task: ", parallel%task, " array width: ", array_width
 
+        
         ! Send/receive the data
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+
+            IF (left_pe_ready .EQ. 1) THEN
+                CALL SHMEM_INT4_WAIT_UNTIL(left_pe_ready, SHMEM_CMP_EQ, 0)
+            ENDIF
+            left_pe_ready = 1
+
 
             !WRITE(*,*) "Task: ", parallel%task, "sending left to: ", receiver, " with depth: ", depth
 
@@ -475,19 +502,16 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                 !                                                       " target y: ", chunks(chunk)%field%y_min-depth
             ENDIF
 
-
-          !IF (left_write_flag .EQ. 0) THEN
-          !  CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
-          !ENDIF
-          !CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
-          !
-          !left_write_flag = 0 
-
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
             receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
             !WRITE(*,*) "Task: ", parallel%task, " sending right to: ", receiver, " with depth: ", depth
+
+            IF (right_pe_ready .EQ. 1) THEN
+                CALL SHMEM_INT4_WAIT_UNTIL(right_pe_ready, SHMEM_CMP_EQ, 0)
+            ENDIF
+            right_pe_ready = 1
 
             IF (depth .EQ. 1) THEN
 
@@ -523,188 +547,157 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                 !                                                " target x: ", chunks(chunk)%field%x_min-2, &
                 !                                                " target y: ", chunks(chunk)%field%y_min-depth 
             ENDIF
+        ENDIF
+
+    ENDIF
+    
+
+    CALL SHMEM_QUIET
 
 
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
-          !IF (right_write_flag .EQ. 0) THEN
-          !  CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
-          !ENDIF
-          !CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+        IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
 
-          !right_write_flag = 0 
+            CALL SHMEM_PUT4_NB(right_pe_written, 0, 1, receiver)
+        ENDIF
+
+        IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+
+            CALL SHMEM_PUT4_NB(left_pe_written, 0, 1, receiver)
+        ENDIF
+    ENDIF
+
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
+
+        IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+
+            IF (left_pe_written .EQ. 1) THEN
+              CALL SHMEM_INT4_WAIT_UNTIL(left_pe_written, SHMEM_CMP_EQ, 0)
+            ENDIF
+            left_pe_written = 1
 
         ENDIF
-  ENDIF
 
-    !CALL SHMEM_QUIET
-    CALL SHMEM_BARRIER_ALL
+        IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
 
-  !IF(parallel%task.EQ.chunks(chunk)%task) THEN
+            IF (right_pe_written .EQ. 1) THEN
+              CALL SHMEM_INT4_WAIT_UNTIL(right_pe_written, SHMEM_CMP_EQ, 0)
+            ENDIF
+            right_pe_written = 1
 
-  !  ! Send/receive the data
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-
-  !    CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
-
-  !  ENDIF
-
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-
-  !    CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
-
-  !  ENDIF
-  !ENDIF
-
-  !IF(parallel%task.EQ.chunks(chunk)%task) THEN
-
-  !  ! Send/receive the data
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-
-  !    IF (left_rcv_flag .EQ. 0) THEN
-  !      CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
-  !    ENDIF
-  !    left_rcv_flag = 0
-
-  !  ENDIF
-
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-
-  !    IF (right_rcv_flag .EQ. 0) THEN
-  !      CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
-  !    ENDIF
-  !    right_rcv_flag = 0
-
-  !  ENDIF
-  !ENDIF
-
-
-  !  
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-
-  !    CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
-  !  ENDIF
-
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-
-  !    CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
-  !  ENDIF
-
-  !ENDIF
-
-
-  ! Pack real data into buffers
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
-    size=(1+(chunks(chunk)%field%x_max+x_inc+depth)-(chunks(chunk)%field%x_min-depth))*depth
-
-    ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-
-        !WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
-        !                            " source x: ", chunks(chunk)%field%x_min-depth,  &
-        !                            " source y: ", chunks(chunk)%field%y_min+y_inc, &
-        !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-        !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
-
-        CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
-                            field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
-                            size, receiver)
-
-      !IF (bottom_write_flag .EQ. 0) THEN
-      !  CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
-      !ENDIF
-      !CALL SHMEM_PUT64_NB(top_rcv_buffer, bottom_snd_buffer, size, receiver)
-
-      !bottom_write_flag = 0
+        ENDIF
     ENDIF
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-
-        !WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
-        !                            " source x: ", chunks(chunk)%field%x_min-depth, &
-        !                            " source y: ", chunks(chunk)%field%y_max+1-depth, &
-        !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-        !                            " target y: ", chunks(chunk)%field%y_min-depth
-                                    
-
-        CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-                            field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
-                            size, receiver)
 
 
-      !IF (top_write_flag .EQ. 0) THEN
-      !  CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
-      !ENDIF
+    !tell up and down neighbours that this pe is ready to receive 
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
+        IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
-      !CALL SHMEM_PUT64_NB(bottom_rcv_buffer, top_snd_buffer, size, receiver)
+            CALL SHMEM_PUT4_NB(top_pe_ready, 0, 1, receiver)
+        ENDIF
+    
+        IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
 
-      !top_write_flag = 0 
+            CALL SHMEM_PUT4_NB(bottom_pe_ready, 0, 1, receiver)
+        ENDIF
     ENDIF
 
-  ENDIF
+
+
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
+        size=(1+(chunks(chunk)%field%x_max+x_inc+depth)-(chunks(chunk)%field%x_min-depth))*depth
+
+        ! Send/receive the data
+        IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+
+            IF (bottom_pe_ready .EQ. 1) THEN
+                CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_ready, SHMEM_CMP_EQ, 0)
+            ENDIF
+            bottom_pe_ready = 1
+
+            !WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
+            !                            " source x: ", chunks(chunk)%field%x_min-depth,  &
+            !                            " source y: ", chunks(chunk)%field%y_min+y_inc, &
+            !                            " target x: ", chunks(chunk)%field%x_min-depth, &
+            !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
+
+            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
+                                size, receiver)
+
+        ENDIF
+
+        IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+
+            IF (top_pe_ready .EQ. 1) THEN
+                CALL SHMEM_INT4_WAIT_UNTIL(top_pe_ready, SHMEM_CMP_EQ, 0)
+            ENDIF
+            top_pe_ready = 1
+
+            !WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
+            !                            " source x: ", chunks(chunk)%field%x_min-depth, &
+            !                            " source y: ", chunks(chunk)%field%y_max+1-depth, &
+            !                            " target x: ", chunks(chunk)%field%x_min-depth, &
+            !                            " target y: ", chunks(chunk)%field%y_min-depth
+                                        
+
+            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
+                                size, receiver)
+        ENDIF
+
+    ENDIF
 
     ! Wait for the messages
-    !CALL SHMEM_QUIET
-    CALL SHMEM_BARRIER_ALL
+    CALL SHMEM_QUIET
 
 
-  !IF(parallel%task.EQ.chunks(chunk)%task) THEN
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
-  !  ! Send/receive the data
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        ! Send/receive the data
+        IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
-  !    CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
-  !  ENDIF
+            CALL SHMEM_PUT4_NB(top_pe_written, 0, 1, receiver)
+        ENDIF
 
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+        IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
 
-  !    CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
-  !  ENDIF
-  !ENDIF
-
-  !IF(parallel%task.EQ.chunks(chunk)%task) THEN
-
-  !  ! Send/receive the data
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-
-  !    IF (bottom_rcv_flag .EQ. 0) THEN
-  !      CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-  !    ENDIF
-
-  !    bottom_rcv_flag = 0
-  !  ENDIF
-
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-
-  !    IF (top_rcv_flag .EQ. 0) THEN
-  !      CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
-  !    ENDIF
-
-  !    top_rcv_flag = 0
-  !  ENDIF
-  !ENDIF
+            CALL SHMEM_PUT4_NB(bottom_pe_written, 0, 1, receiver)
+        ENDIF
+    ENDIF
 
 
+    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        ! Send/receive the data
+        IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
 
-  !    CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
-  !  ENDIF
+            IF (bottom_pe_written .EQ. 1) THEN
+              CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_written, SHMEM_CMP_EQ, 0)
+            ENDIF
 
-  !  IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-  !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+            bottom_pe_written = 1
+        ENDIF
 
-  !    CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
-  !  ENDIF
-  !ENDIF
+        IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+
+            IF (top_pe_written .EQ. 1) THEN
+              CALL SHMEM_INT4_WAIT_UNTIL(top_pe_written, SHMEM_CMP_EQ, 0)
+            ENDIF
+
+            top_pe_written = 1
+        ENDIF
+    ENDIF
 
 END SUBROUTINE clover_exchange_message
 
