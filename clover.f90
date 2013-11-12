@@ -58,8 +58,8 @@ MODULE clover_module
 
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    INTEGER(KIND=4), VOLATILE :: right_pe_ready, left_pe_ready 
-    INTEGER(KIND=4) :: top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+    INTEGER(KIND=4), VOLATILE :: right_pe_ready, left_pe_ready, right_pe_written, left_pe_written
+    INTEGER(KIND=4) :: top_pe_ready, bottom_pe_ready, top_pe_written, bottom_pe_written 
     COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
     ! 1 = false 0 = true
 
@@ -570,23 +570,39 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
-        IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-
-            IF (left_pe_written .EQ. 1) THEN
-              CALL SHMEM_INT4_WAIT_UNTIL(left_pe_written, SHMEM_CMP_EQ, 0)
-            ENDIF
+        IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face)) THEN 
+            DO WHILE ((left_pe_written .EQ. 1) .OR. (right_pe_written .EQ. 1))
+            ENDDO
             left_pe_written = 1
-
-        ENDIF
-
-        IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-
-            IF (right_pe_written .EQ. 1) THEN
-              CALL SHMEM_INT4_WAIT_UNTIL(right_pe_written, SHMEM_CMP_EQ, 0)
-            ENDIF
             right_pe_written = 1
-
+        ELSEIF (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+            DO WHILE (left_pe_written .EQ. 1) 
+            ENDDO
+            left_pe_written = 1
+        ELSEIF (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+            DO WHILE (right_pe_written .EQ. 1) 
+            ENDDO
+            right_pe_written = 1  
         ENDIF
+
+
+        !IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+
+        !    IF (left_pe_written .EQ. 1) THEN
+        !      CALL SHMEM_INT4_WAIT_UNTIL(left_pe_written, SHMEM_CMP_EQ, 0)
+        !    ENDIF
+        !    left_pe_written = 1
+
+        !ENDIF
+
+        !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+
+        !    IF (right_pe_written .EQ. 1) THEN
+        !      CALL SHMEM_INT4_WAIT_UNTIL(right_pe_written, SHMEM_CMP_EQ, 0)
+        !    ENDIF
+        !    right_pe_written = 1
+
+        !ENDIF
     ENDIF
 
 
