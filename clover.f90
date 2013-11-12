@@ -30,54 +30,49 @@
 !>  systems of the order of 10K cores.
 
 MODULE clover_module
+    
+    USE data_module
+    USE definitions_module
+    USE iso_c_binding
 
-  USE data_module
-  USE definitions_module
-  USE iso_c_binding
+    IMPLICIT NONE
 
-  IMPLICIT NONE
+    INCLUDE 'mpp/shmem.fh'
 
-  INCLUDE 'mpp/shmem.fh'
+    REAL(KIND=8) :: sum_total, sum_value
+    REAL(KIND=8) :: min_value, min_final
+    REAL(KIND=8) :: max_value, max_final
+    INTEGER      :: error_value, error_final
 
-  REAL(KIND=8) :: sum_total, sum_value
-  REAL(KIND=8) :: min_value, min_final
-  REAL(KIND=8) :: max_value, max_final
-  INTEGER      :: error_value, error_final
+    REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
 
-  REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
+    REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
 
-  REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
+    REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
 
-  REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
+    INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
 
-  INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-  INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
+    INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-  INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
-
-  INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
-  INTEGER(KIND=4) :: top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
-  COMMON/FLAG/left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag, top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
-
-  INTEGER(KIND=4) :: right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
-  COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
-
+    INTEGER(KIND=4) :: right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+    COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
     ! 1 = false 0 = true
 
 CONTAINS
 
 SUBROUTINE clover_barrier
-
-  CALL SHMEM_BARRIER_ALL()
+    
+    CALL SHMEM_BARRIER_ALL()
 
 END SUBROUTINE clover_barrier
 
 SUBROUTINE clover_abort
 
-  CALL SHMEM_FINALIZE
+    CALL SHMEM_FINALIZE
 
 END SUBROUTINE clover_abort
 
@@ -96,19 +91,9 @@ END SUBROUTINE clover_finalize
 
 SUBROUTINE clover_init_comms
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  INTEGER :: err,rank,size
-
-  left_rcv_flag = 0
-  right_rcv_flag = 0
-  left_write_flag = 1 
-  right_write_flag = 1
-
-  bottom_rcv_flag = 0
-  top_rcv_flag = 0
-  bottom_write_flag = 1 
-  top_write_flag = 1
+    INTEGER :: err,rank,size
 
     right_pe_ready = 1
     left_pe_ready = 1
@@ -120,36 +105,36 @@ SUBROUTINE clover_init_comms
     top_pe_written = 1
     bottom_pe_written = 1
 
-  rank=0
-  size=1
+    rank=0
+    size=1
 
-  CALL START_PES(0)
+    CALL START_PES(0)
 
-  rank=SHMEM_MY_PE()
-  size=SHMEM_N_PES()
+    rank=SHMEM_MY_PE()
+    size=SHMEM_N_PES()
 
-  parallel%parallel=.TRUE.
-  parallel%task=rank
+    parallel%parallel=.TRUE.
+    parallel%task=rank
 
-  IF(rank.EQ.0) THEN
-    parallel%boss=.TRUE.
-  ENDIF
+    IF(rank.EQ.0) THEN
+      parallel%boss=.TRUE.
+    ENDIF
 
-  parallel%boss_task=0
-  parallel%max_task=size
+    parallel%boss_task=0
+    parallel%max_task=size
 
 END SUBROUTINE clover_init_comms
 
 
 SUBROUTINE clover_get_num_chunks(count)
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  INTEGER :: count
+    INTEGER :: count
 
-! Should be changed so there can be more than one chunk per mpi task
+    ! Should be changed so there can be more than one chunk per mpi task
 
-  count=parallel%max_task
+    count=parallel%max_task
 
 END SUBROUTINE clover_get_num_chunks
 
@@ -248,50 +233,6 @@ SUBROUTINE clover_decompose(x_cells,y_cells,left,right,bottom,top)
   ENDIF
 
 END SUBROUTINE clover_decompose
-
-SUBROUTINE clover_allocate_buffers(chunk)
-
-  IMPLICIT NONE
-
-  INTEGER      :: chunk, err, idefault
-  INTEGER      :: buffer_size_x, buffer_size_y
-  REAL(KIND=8) :: r8default 
-  
-  ! Unallocated buffers for external boundaries caused issues on some systems so they are now
-  !  all allocated
-  IF(parallel%task.EQ.chunks(chunk)%task)THEN
-
-    buffer_size_x = kind(r8default)/kind(idefault)*2*(chunks(chunk)%field%x_max+5)
-    buffer_size_y = kind(r8default)/kind(idefault)*2*(chunks(chunk)%field%y_max+5)
-
-    CALL SHPALLOC( pls, buffer_size_y, err, 0)
-    CALL SHPALLOC( plr, buffer_size_y, err, 0)
-    CALL SHPALLOC( prs, buffer_size_y, err, 0)
-    CALL SHPALLOC( prr, buffer_size_y, err, 0)
-    CALL SHPALLOC( pbs, buffer_size_x, err, 0)
-    CALL SHPALLOC( pbr, buffer_size_x, err, 0)
-    CALL SHPALLOC( pts, buffer_size_x, err, 0)
-    CALL SHPALLOC( ptr, buffer_size_x, err, 0)
-
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%left_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%right_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%right_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%bottom_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%bottom_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%top_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%top_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
-  ENDIF
-
-END SUBROUTINE clover_allocate_buffers
 
 SUBROUTINE clover_exchange(fields,depth)
 

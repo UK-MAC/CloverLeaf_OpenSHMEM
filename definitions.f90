@@ -176,15 +176,10 @@ MODULE definitions_module
      !  one send and one receive per face, rather than per field.
      ! If chunks are overloaded, i.e. more chunks than tasks, might need to pack for a task to task comm 
      !  rather than a chunk to chunk comm. See how performance is at high core counts before deciding
-     !REAL(KIND=8),ALLOCATABLE:: left_rcv_buffer(:),right_rcv_buffer(:),bottom_rcv_buffer(:),top_rcv_buffer(:)
-     !REAL(KIND=8),ALLOCATABLE:: left_snd_buffer(:),right_snd_buffer(:),bottom_snd_buffer(:),top_snd_buffer(:)
 
      TYPE(field_type):: field
 
   END TYPE chunk_type
-
-  REAL(KIND=8):: left_rcv_buffer(1),right_rcv_buffer(1),bottom_rcv_buffer(1),top_rcv_buffer(1)
-  REAL(KIND=8):: left_snd_buffer(1),right_snd_buffer(1),bottom_snd_buffer(1),top_snd_buffer(1)
 
     !REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
     !REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
@@ -259,16 +254,6 @@ MODULE definitions_module
     POINTER(pMassFluxX,  mass_flux_x)
     POINTER(pVolFluxY,   vol_flux_y)
     POINTER(pMassFluxY,  mass_flux_y)
-
-
-  POINTER (plr,left_rcv_buffer)
-  POINTER (prr,right_rcv_buffer)
-  POINTER (pbr,bottom_rcv_buffer)
-  POINTER (ptr,top_rcv_buffer)
-  POINTER (pls,left_snd_buffer)
-  POINTER (prs,right_snd_buffer)
-  POINTER (pbs,bottom_snd_buffer)
-  POINTER (pts,top_snd_buffer)
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
