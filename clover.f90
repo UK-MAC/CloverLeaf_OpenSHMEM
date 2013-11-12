@@ -58,8 +58,8 @@ MODULE clover_module
 
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    INTEGER(KIND=4), VOLATILE :: right_pe_ready, left_pe_ready, right_pe_written, left_pe_written
-    INTEGER(KIND=4) :: top_pe_ready, bottom_pe_ready, top_pe_written, bottom_pe_written 
+    INTEGER(KIND=4), VOLATILE :: right_pe_ready, left_pe_ready, right_pe_written, left_pe_written, top_pe_ready, bottom_pe_ready
+    INTEGER(KIND=4) :: top_pe_written, bottom_pe_written 
     COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
     ! 1 = false 0 = true
 
@@ -416,6 +416,37 @@ SUBROUTINE clover_exchange_right_put(depth, x_inc, y_inc, array_width, num_eleme
 
 END SUBROUTINE clover_exchange_right_put
 
+
+SUBROUTINE clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
+
+    IMPLICIT NONE
+
+    INTEGER :: depth, x_inc, y_inc, chunk, size, receiver 
+    REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
+
+    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+
+    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
+                        size, receiver)
+
+END SUBROUTINE clover_exchange_top_put
+
+SUBROUTINE clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
+
+    IMPLICIT NONE
+
+    INTEGER :: depth, x_inc, y_inc, chunk, size, receiver 
+    REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
+
+    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+
+    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
+                        size, receiver)
+
+END SUBROUTINE clover_exchange_bottom_put
+
 SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
     
     IMPLICIT NONE
@@ -627,46 +658,79 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
         size=(1+(chunks(chunk)%field%x_max+x_inc+depth)-(chunks(chunk)%field%x_min-depth))*depth
 
-        ! Send/receive the data
-        IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        IF ((chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)) THEN
 
-            IF (bottom_pe_ready .EQ. 1) THEN
-                CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_ready, SHMEM_CMP_EQ, 0)
+            DO WHILE ((bottom_pe_ready .EQ. 1) .AND. (top_pe_ready .EQ. 1)) 
+            ENDDO
+            IF (bottom_pe_ready .EQ. 0) THEN
+                CALL clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
+                bottom_pe_ready = 1
+                DO WHILE (top_pe_ready .EQ. 1)
+                ENDDO
+                CALL clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
+                top_pe_ready = 1
+            ELSEIF (top_pe_ready .EQ. 0) THEN
+                CALL clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
+                top_pe_ready = 1
+                DO WHILE (bottom_pe_ready .EQ. 1)
+                ENDDO 
+                CALL clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
+                bottom_pe_ready = 1
             ENDIF
+        
+        ELSEIF (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+            DO WHILE (bottom_pe_ready .EQ. 1)
+            ENDDO
+            CALL clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
             bottom_pe_ready = 1
-
-            !WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
-            !                            " source x: ", chunks(chunk)%field%x_min-depth,  &
-            !                            " source y: ", chunks(chunk)%field%y_min+y_inc, &
-            !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-            !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
-
-            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
-                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
-                                size, receiver)
-
-        ENDIF
-
-        IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-
-            IF (top_pe_ready .EQ. 1) THEN
-                CALL SHMEM_INT4_WAIT_UNTIL(top_pe_ready, SHMEM_CMP_EQ, 0)
-            ENDIF
+        ELSEIF (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+            DO WHILE (top_pe_ready .EQ. 1)
+            ENDDO
+            CALL clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
             top_pe_ready = 1
-
-            !WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
-            !                            " source x: ", chunks(chunk)%field%x_min-depth, &
-            !                            " source y: ", chunks(chunk)%field%y_max+1-depth, &
-            !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-            !                            " target y: ", chunks(chunk)%field%y_min-depth
-                                        
-
-            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
-                                size, receiver)
         ENDIF
+
+
+        ! Send/receive the data
+        !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+
+        !    IF (bottom_pe_ready .EQ. 1) THEN
+        !        CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_ready, SHMEM_CMP_EQ, 0)
+        !    ENDIF
+        !    bottom_pe_ready = 1
+
+        !    !WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
+        !    !                            " source x: ", chunks(chunk)%field%x_min-depth,  &
+        !    !                            " source y: ", chunks(chunk)%field%y_min+y_inc, &
+        !    !                            " target x: ", chunks(chunk)%field%x_min-depth, &
+        !    !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
+
+        !    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+        !                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
+        !                        size, receiver)
+
+        !ENDIF
+
+        !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+
+        !    IF (top_pe_ready .EQ. 1) THEN
+        !        CALL SHMEM_INT4_WAIT_UNTIL(top_pe_ready, SHMEM_CMP_EQ, 0)
+        !    ENDIF
+        !    top_pe_ready = 1
+
+        !    !WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
+        !    !                            " source x: ", chunks(chunk)%field%x_min-depth, &
+        !    !                            " source y: ", chunks(chunk)%field%y_max+1-depth, &
+        !    !                            " target x: ", chunks(chunk)%field%x_min-depth, &
+        !    !                            " target y: ", chunks(chunk)%field%y_min-depth
+        !                                
+
+        !    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+        !                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
+        !                        size, receiver)
+        !ENDIF
 
     ENDIF
 
