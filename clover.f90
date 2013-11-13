@@ -554,8 +554,12 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         ENDIF
     
 
-        CALL SHMEM_QUIET
 
+#ifdef FENCE_NOT_QUIET
+        CALL SHMEM_FENCE
+#else
+        CALL SHMEM_QUIET
+#endif
 
 
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
@@ -637,9 +641,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             top_pe_ready = 1
         ENDIF
 
-        ! Wait for the messages
-        CALL SHMEM_QUIET
 
+        ! Wait for the messages
+#ifdef FENCE_NOT_QUIET
+        CALL SHMEM_FENCE
+#else
+        CALL SHMEM_QUIET
+#endif
 
 
         ! Send/receive the data
