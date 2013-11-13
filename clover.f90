@@ -493,8 +493,11 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
     ENDIF
     
 
-    CALL SHMEM_QUIET
-
+#ifdef FENCE_NOT_QUIET
+        CALL SHMEM_FENCE
+#else
+        CALL SHMEM_QUIET
+#endif
 
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
@@ -597,8 +600,12 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
     ENDIF
 
-    ! Wait for the messages
-    CALL SHMEM_QUIET
+#ifdef FENCE_NOT_QUIET
+        CALL SHMEM_FENCE
+#else
+        CALL SHMEM_QUIET
+#endif
+
 
 
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
