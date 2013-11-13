@@ -493,7 +493,6 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
       y_inc=1
     ENDIF
 
-    !CALL SHMEM_BARRIER_ALL
 
     ! Pack real data into buffers
     IF(parallel%task.EQ.chunks(chunk)%task) THEN
@@ -553,13 +552,11 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             right_pe_ready = 1
 
         ENDIF
-    ENDIF
     
 
-    CALL SHMEM_QUIET
+        CALL SHMEM_QUIET
 
 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
@@ -572,9 +569,7 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
             CALL SHMEM_PUT4_NB(left_pe_written, 0, 1, receiver)
         ENDIF
-    ENDIF
 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
         IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face)) THEN 
             DO WHILE ((left_pe_written .EQ. 1) .OR. (right_pe_written .EQ. 1))
@@ -590,12 +585,10 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             ENDDO
             right_pe_written = 1  
         ENDIF
-    ENDIF
 
 
 
-    !tell up and down neighbours that this pe is ready to receive 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
+        !tell up and down neighbours that this pe is ready to receive 
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
@@ -607,11 +600,9 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
             CALL SHMEM_PUT4_NB(bottom_pe_ready, 0, 1, receiver)
         ENDIF
-    ENDIF
 
 
 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
         size=(1+(chunks(chunk)%field%x_max+x_inc+depth)-(chunks(chunk)%field%x_min-depth))*depth
 
         IF ((chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)) THEN
@@ -645,13 +636,11 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             CALL clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
             top_pe_ready = 1
         ENDIF
-    ENDIF
 
-    ! Wait for the messages
-    CALL SHMEM_QUIET
+        ! Wait for the messages
+        CALL SHMEM_QUIET
 
 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
         ! Send/receive the data
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
@@ -665,10 +654,8 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
             CALL SHMEM_PUT4_NB(bottom_pe_written, 0, 1, receiver)
         ENDIF
-    ENDIF
 
 
-    IF(parallel%task.EQ.chunks(chunk)%task) THEN
 
         IF ((chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)) THEN
             DO WHILE ((bottom_pe_written .EQ. 1) .OR. (top_pe_written .EQ. 1))
@@ -684,6 +671,7 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             ENDDO
             top_pe_written = 1
         ENDIF
+
     ENDIF
 
 END SUBROUTINE clover_exchange_message
