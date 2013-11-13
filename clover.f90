@@ -367,6 +367,7 @@ SUBROUTINE clover_exchange_left_put(depth, x_inc, y_inc, array_width, num_elemen
         !                                                       " target x: ", chunks(chunk)%field%x_max+x_inc+2, &
         !                                                       " target y: ", chunks(chunk)%field%y_min-depth
     ENDIF
+
 END SUBROUTINE clover_exchange_left_put
 
 SUBROUTINE clover_exchange_right_put(depth, x_inc, y_inc, array_width, num_elements, field, chunk)
@@ -552,31 +553,6 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             right_pe_ready = 1
 
         ENDIF
-
-        
-        ! Send/receive the data
-        !IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-
-        !    IF (left_pe_ready .EQ. 1) THEN
-        !        CALL SHMEM_INT4_WAIT_UNTIL(left_pe_ready, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    left_pe_ready = 1
-
-
-        !    !WRITE(*,*) "Task: ", parallel%task, "sending left to: ", receiver, " with depth: ", depth
-        !ENDIF
-
-        !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-        !    !WRITE(*,*) "Task: ", parallel%task, " sending right to: ", receiver, " with depth: ", depth
-
-        !    IF (right_pe_ready .EQ. 1) THEN
-        !        CALL SHMEM_INT4_WAIT_UNTIL(right_pe_ready, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    right_pe_ready = 1
-        !ENDIF
-
     ENDIF
     
 
@@ -614,25 +590,6 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             ENDDO
             right_pe_written = 1  
         ENDIF
-
-
-        !IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-
-        !    IF (left_pe_written .EQ. 1) THEN
-        !      CALL SHMEM_INT4_WAIT_UNTIL(left_pe_written, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    left_pe_written = 1
-
-        !ENDIF
-
-        !IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-
-        !    IF (right_pe_written .EQ. 1) THEN
-        !      CALL SHMEM_INT4_WAIT_UNTIL(right_pe_written, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    right_pe_written = 1
-
-        !ENDIF
     ENDIF
 
 
@@ -688,49 +645,6 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             CALL clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
             top_pe_ready = 1
         ENDIF
-
-
-        ! Send/receive the data
-        !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-
-        !    IF (bottom_pe_ready .EQ. 1) THEN
-        !        CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_ready, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    bottom_pe_ready = 1
-
-        !    !WRITE(*,*) "Task: ", parallel%task, " sending down to: ", receiver, " size: ", size, &
-        !    !                            " source x: ", chunks(chunk)%field%x_min-depth,  &
-        !    !                            " source y: ", chunks(chunk)%field%y_min+y_inc, &
-        !    !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-        !    !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
-
-        !    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
-        !                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
-        !                        size, receiver)
-
-        !ENDIF
-
-        !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        !    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-
-        !    IF (top_pe_ready .EQ. 1) THEN
-        !        CALL SHMEM_INT4_WAIT_UNTIL(top_pe_ready, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-        !    top_pe_ready = 1
-
-        !    !WRITE(*,*) "Task: ", parallel%task, " sending up to: ", receiver, " size: ", size, &
-        !    !                            " source x: ", chunks(chunk)%field%x_min-depth, &
-        !    !                            " source y: ", chunks(chunk)%field%y_max+1-depth, &
-        !    !                            " target x: ", chunks(chunk)%field%x_min-depth, &
-        !    !                            " target y: ", chunks(chunk)%field%y_min-depth
-        !                                
-
-        !    CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-        !                        field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
-        !                        size, receiver)
-        !ENDIF
-
     ENDIF
 
     ! Wait for the messages
@@ -770,25 +684,6 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             ENDDO
             top_pe_written = 1
         ENDIF
-
-        ! Send/receive the data
-        !IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-
-        !    IF (bottom_pe_written .EQ. 1) THEN
-        !      CALL SHMEM_INT4_WAIT_UNTIL(bottom_pe_written, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-
-        !    bottom_pe_written = 1
-        !ENDIF
-
-        !IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-
-        !    IF (top_pe_written .EQ. 1) THEN
-        !      CALL SHMEM_INT4_WAIT_UNTIL(top_pe_written, SHMEM_CMP_EQ, 0)
-        !    ENDIF
-
-        !    top_pe_written = 1
-        !ENDIF
     ENDIF
 
 END SUBROUTINE clover_exchange_message
