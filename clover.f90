@@ -291,27 +291,264 @@ SUBROUTINE clover_allocate_buffers(chunk)
     buffer_size_y = element_size*2*(chunks(chunk)%field%y_max+5)
     diag_buff_size = element_size*6
 
-    CALL SHPALLOC( pls, buffer_size_y, err, 1)
-    CALL SHPALLOC( plr, buffer_size_y, err, 1)
-    CALL SHPALLOC( prs, buffer_size_y, err, 1)
-    CALL SHPALLOC( prr, buffer_size_y, err, 1)
-    CALL SHPALLOC( pbs, buffer_size_x, err, 1)
-    CALL SHPALLOC( pbr, buffer_size_x, err, 1)
-    CALL SHPALLOC( pts, buffer_size_x, err, 1)
-    CALL SHPALLOC( ptr, buffer_size_x, err, 1)
+    CALL SHPALLOC(density0_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density0_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density0_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density0_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density0_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density0_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density0_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density0_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density0_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(density0_prbs, diag_buff_size, err, 1)
 
-    CALL SHPALLOC(pltr, diag_buff_size, err, 1)
-    CALL SHPALLOC(prtr, diag_buff_size, err, 1)
-    CALL SHPALLOC(plbr, diag_buff_size, err, 1)
-    CALL SHPALLOC(prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density1_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density1_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density1_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(density1_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density1_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density1_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density1_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(density1_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(density1_prbs, diag_buff_size, err, 1)
 
-    CALL SHPALLOC(plts, diag_buff_size, err, 1)
-    CALL SHPALLOC(prts, diag_buff_size, err, 1)
-    CALL SHPALLOC(plbs, diag_buff_size, err, 1)
-    CALL SHPALLOC(prbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy0_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy0_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy0_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy0_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy0_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy0_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy0_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy0_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy0_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(energy1_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy1_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy1_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy1_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(energy1_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy1_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy1_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy1_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(energy1_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(energy1_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(pressure_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(pressure_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(pressure_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(pressure_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(pressure_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(pressure_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(pressure_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(pressure_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(pressure_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(pressure_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(viscosity_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(viscosity_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(viscosity_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(viscosity_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(viscosity_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(viscosity_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(viscosity_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(viscosity_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(viscosity_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(viscosity_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(soundspeed_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(soundspeed_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(soundspeed_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(soundspeed_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(soundspeed_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(soundspeed_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(soundspeed_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(soundspeed_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(soundspeed_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(soundspeed_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(xvel0_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel0_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel0_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel0_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel0_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel0_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel0_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel0_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel0_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel0_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(xvel1_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel1_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel1_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel1_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(xvel1_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel1_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel1_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel1_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(xvel1_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(xvel1_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(yvel0_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel0_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel0_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel0_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel0_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel0_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel0_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel0_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel0_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel0_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(yvel1_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel1_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel1_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel1_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(yvel1_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel1_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel1_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel1_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(yvel1_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(yvel1_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(volflux_x_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_x_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_x_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_x_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_x_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_x_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_x_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_x_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_x_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_x_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(volflux_y_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_y_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_y_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_y_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(volflux_y_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_y_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_y_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_y_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(volflux_y_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(volflux_y_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(massflux_x_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_x_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_x_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_x_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_x_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_x_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_x_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_x_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_x_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_x_prbs, diag_buff_size, err, 1)
+
+    CALL SHPALLOC(massflux_y_pls,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_y_plr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_y_prs,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_y_prr,  buffer_size_y, err, 1)
+    CALL SHPALLOC(massflux_y_pbs,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_y_pbr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_y_pts,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_y_ptr,  buffer_size_x, err, 1)
+    CALL SHPALLOC(massflux_y_pltr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_prtr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_plbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_prbr, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_plts, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_prts, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_plbs, diag_buff_size, err, 1)
+    CALL SHPALLOC(massflux_y_prbs, diag_buff_size, err, 1)
+
+
 
     WRITE(*,*) "Successfully shpalloc'd the comms buffers"
-
 
     !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
     !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
@@ -332,6 +569,341 @@ SUBROUTINE clover_allocate_buffers(chunk)
   ENDIF
 
 END SUBROUTINE clover_allocate_buffers
+
+SUBROUTINE clover_exchange_send_async()
+
+    IMPLICIT NONE
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        !wait until can write
+        !call method to write all buffers in this direction 
+    ENDIF
+
+END SUBROUTINE clover_exchange_send_async
+
+SUBROUTINE clover_exchange_write_all_buffers_left()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        !CALL wite buffer left
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+
+END SUBROUTINE clover_exchange_write_all_buffers_left
+
+SUBROUTINE clover_exchange_write_all_buffers_right()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_right
+
+SUBROUTINE clover_exchange_write_all_buffers_bottom()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_bottom
+
+
+SUBROUTINE clover_exchange_write_all_buffers_top()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_top
+
+
+SUBROUTINE clover_exchange_write_all_buffers_left_top()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_left_top
+
+SUBROUTINE clover_exchange_write_all_buffers_right_top()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_right_top
+
+SUBROUTINE clover_exchange_write_all_buffers_right_bottom()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_right_bottom
+
+SUBROUTINE clover_exchange_write_all_buffers_left_bottom()
+
+    IMPLICIT NONE 
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+    ENDIF
+END SUBROUTINE clover_exchange_write_all_buffers_left_bottom
+
+
+
+
 
 SUBROUTINE clover_exchange(fields,depth)
 
@@ -661,6 +1233,39 @@ SUBROUTINE clover_exchange(fields,depth)
 
 
 END SUBROUTINE clover_exchange
+
+
+SUBROUTINE clover_exchange_write_message_left(chunk, depth, receiver, size, field_type, left_snd_buffer, right_rcv_buffer, field)
+
+    IMPLICIT NONE 
+
+    IF(field_type.EQ.CELL_DATA) THEN
+      x_inc=0
+      y_inc=0
+    ENDIF
+    IF(field_type.EQ.VERTEX_DATA) THEN
+      x_inc=1
+      y_inc=1
+    ENDIF
+    IF(field_type.EQ.X_FACE_DATA) THEN
+      x_inc=1
+      y_inc=0
+    ENDIF
+    IF(field_type.EQ.Y_FACE_DATA) THEN
+      x_inc=0
+      y_inc=1
+    ENDIF
+
+    ! pack buffer 
+    CALL pack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_snd_buffer, field)
+
+    ! send buffer 
+    CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+
+END SUBROUTINE clover_exchange_write_message_left
+
+
+
 
 SUBROUTINE clover_exchange_message(chunk,field,                            &
                                    left_snd_buffer,                        &
