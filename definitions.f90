@@ -170,7 +170,7 @@ MODULE definitions_module
 
      INTEGER         :: task   !mpi task
 
-     INTEGER         :: chunk_neighbours(4) ! Chunks, not tasks, so we can overload in the future
+     INTEGER         :: chunk_neighbours(8) ! Chunks, not tasks, so we can overload in the future
 
      ! Idealy, create an array to hold the buffers for each field so a commuincation only needs
      !  one send and one receive per face, rather than per field.
@@ -183,17 +183,31 @@ MODULE definitions_module
 
   END TYPE chunk_type
 
-  REAL(KIND=8):: left_rcv_buffer(1),right_rcv_buffer(1),bottom_rcv_buffer(1),top_rcv_buffer(1)
-  REAL(KIND=8):: left_snd_buffer(1),right_snd_buffer(1),bottom_snd_buffer(1),top_snd_buffer(1)
+  REAL(KIND=8) :: left_rcv_buffer(1),right_rcv_buffer(1),bottom_rcv_buffer(1),top_rcv_buffer(1)
+  REAL(KIND=8) :: left_snd_buffer(1),right_snd_buffer(1),bottom_snd_buffer(1),top_snd_buffer(1)
 
-  POINTER (plr,left_rcv_buffer)
-  POINTER (prr,right_rcv_buffer)
-  POINTER (pbr,bottom_rcv_buffer)
-  POINTER (ptr,top_rcv_buffer)
-  POINTER (pls,left_snd_buffer)
-  POINTER (prs,right_snd_buffer)
-  POINTER (pbs,bottom_snd_buffer)
-  POINTER (pts,top_snd_buffer)
+  REAL(KIND=8) :: left_top_snd_buffer(1), right_top_snd_buffer(1), left_bottom_snd_buffer(1), right_bottom_snd_buffer(1)
+  REAL(KIND=8) :: left_top_rcv_buffer(1), right_top_rcv_buffer(1), left_bottom_rcv_buffer(1), right_bottom_rcv_buffer(1)
+
+  POINTER (plr, left_rcv_buffer)
+  POINTER (prr, right_rcv_buffer)
+  POINTER (pbr, bottom_rcv_buffer)
+  POINTER (ptr, top_rcv_buffer)
+
+  POINTER (pls, left_snd_buffer)
+  POINTER (prs, right_snd_buffer)
+  POINTER (pbs, bottom_snd_buffer)
+  POINTER (pts, top_snd_buffer)
+
+  POINTER (pltr, left_top_rcv_buffer)
+  POINTER (prtr, right_top_rcv_buffer)
+  POINTER (plbr, left_bottom_rcv_buffer)
+  POINTER (prbr, right_bottom_rcv_buffer)
+
+  POINTER (plts, left_top_snd_buffer)
+  POINTER (prts, right_top_snd_buffer)
+  POINTER (plbs, left_bottom_snd_buffer)
+  POINTER (prbs, right_bottom_snd_buffer)
 
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
