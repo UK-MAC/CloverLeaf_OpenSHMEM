@@ -765,77 +765,157 @@ SUBROUTINE clover_exchange_write_all_buffers_right(chunk, depth)
 
 END SUBROUTINE clover_exchange_write_all_buffers_right
 
-SUBROUTINE clover_exchange_write_all_buffers_bottom()
+SUBROUTINE clover_exchange_write_all_buffers_bottom(chunk, depth)
 
     IMPLICIT NONE 
 
+    leftedge= 0
+    rightedge= 0
+    IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
+      leftedge = depth
+    ENDIF
+    IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
+      rightedge = depth
+    ENDIF
+
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  density0_bottom_snd_buffer, density0_top_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
     IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  density1_bottom_snd_buffer, density1_top_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
     IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  energy0_bottom_snd_buffer, energy0_top_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
     IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  energy1_bottom_snd_buffer, energy1_top_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
     IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  pressure_bottom_snd_buffer, pressure_top_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
     IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  viscosity_bottom_snd_buffer, viscosity_top_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
     IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                                  soundspeed_bottom_snd_buffer, soundspeed_top_rcv_buffer, chunks(chunk)%field%soundspeed)
     ENDIF
     IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                                  xvel0_bottom_snd_buffer, xvel0_top_rcv_buffer, chunks(chunk)%field%xvel0)
     ENDIF
     IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                                  xvel1_bottom_snd_buffer, xvel1_top_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                                  yvel0_bottom_snd_buffer, yvel0_top_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                                  yvel1_bottom_snd_buffer, yvel1_top_rcv_buffer, chunks(chunk)%field%yvel1)
     ENDIF
     IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, X_FACE_DATA, & 
+                                                  volflux_x_bottom_snd_buffer, volflux_x_top_rcv_buffer, chunks(chunk)%field%vol_flux_x)
     ENDIF
     IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, Y_FACE_DATA, & 
+                                                  volflux_y_bottom_snd_buffer, volflux_y_top_rcv_buffer, chunks(chunk)%field%vol_flux_y)
     ENDIF
     IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, X_FACE_DATA, & 
+                                                  massflux_x_bottom_snd_buffer, massflux_x_top_rcv_buffer, chunks(chunk)%field%mass_flux_x)
     ENDIF
     IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, Y_FACE_DATA, & 
+                                                  massflux_y_bottom_snd_buffer, massflux_y_top_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
+
 END SUBROUTINE clover_exchange_write_all_buffers_bottom
 
 
-SUBROUTINE clover_exchange_write_all_buffers_top()
+SUBROUTINE clover_exchange_write_all_buffers_top(chunk, depth)
 
     IMPLICIT NONE 
 
+    leftedge= 0
+    rightedge= 0
+    IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
+      leftedge = depth
+    ENDIF
+    IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
+      rightedge = depth
+    ENDIF
+
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               density0_top_snd_buffer, density0_bottom_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
     IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               density1_top_snd_buffer, density1_bottom_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
     IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               energy0_top_snd_buffer, energy0_bottom_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
     IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               energy1_top_snd_buffer, energy1_bottom_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
     IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               pressure_top_snd_buffer, pressure_bottom_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
     IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               viscosity_top_snd_buffer, viscosity_bottom_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
     IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, CELL_DATA, & 
+                                               soundspeed_top_snd_buffer, soundspeed_bottom_rcv_buffer, chunks(chunk)%field%soundspeed)
     ENDIF
     IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                               xvel0_top_snd_buffer, xvel0_bottom_rcv_buffer, chunks(chunk)%field%xvel0)
     ENDIF
     IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                               xvel1_top_snd_buffer, xvel1_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                               yvel0_top_snd_buffer, yvel0_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, VERTEX_DATA, & 
+                                               yvel1_top_snd_buffer, yvel1_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
     ENDIF
     IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, X_FACE_DATA, & 
+                                               volflux_x_top_snd_buffer, volflux_x_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_x)
     ENDIF
     IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, Y_FACE_DATA, & 
+                                               volflux_y_top_snd_buffer, volflux_y_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_y)
     ENDIF
     IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, X_FACE_DATA, & 
+                                               massflux_x_top_snd_buffer, massflux_x_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_x)
     ENDIF
     IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, Y_FACE_DATA, & 
+                                               massflux_y_top_snd_buffer, massflux_y_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
+
 END SUBROUTINE clover_exchange_write_all_buffers_top
 
 
@@ -1388,11 +1468,11 @@ SUBROUTINE clover_exchange_write_message_right(chunk, depth, receiver, topedge, 
 
 END SUBROUTINE clover_exchange_write_message_right
 
-SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, size, field_type, bottom_snd_buffer, top_rcv_buffer, field)
+SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge, rightedge, field_type, bottom_snd_buffer, top_rcv_buffer, field)
 
     IMPLICIT NONE 
 
-    INTEGER :: chunk, depth, receiver, size, field_type, x_inc, y_inc
+    INTEGER :: chunk, depth, receiver, size, field_type, x_inc, y_inc, leftedge, rightedge
     REAL(KIND=8) :: bottom_snd_buffer(:), top_rcv_buffer(:) 
     REAL(KIND=8) :: field(-1:,-1:)
 
@@ -1413,6 +1493,8 @@ SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, size, fi
       y_inc=1
     ENDIF
 
+    size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
+
     ! pack buffer 
     CALL pack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_snd_buffer, field)
 
@@ -1421,7 +1503,7 @@ SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, size, fi
 
 END SUBROUTINE clover_exchange_write_message_bottom
 
-SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, size, field_type, top_snd_buffer, bottom_rcv_buffer, field)
+SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, leftedge, rightedge, field_type, top_snd_buffer, bottom_rcv_buffer, field)
 
     IMPLICIT NONE 
 
@@ -1445,6 +1527,8 @@ SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, size, field
       x_inc=0
       y_inc=1
     ENDIF
+
+    size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
 
     ! pack buffer 
     CALL pack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_snd_buffer, field)
