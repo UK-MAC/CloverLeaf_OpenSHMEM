@@ -570,54 +570,274 @@ SUBROUTINE clover_allocate_buffers(chunk)
 
 END SUBROUTINE clover_allocate_buffers
 
+
+SUBROUTINE clover_exchange(fields,depth)
+
+    IMPLICIT NONE
+
+    INTEGER      :: fields(:),depth
+
+    CALL clover_exchange_send_async(parallel%task+1, depth, fields)
+
+    CALL clover_exchange_receive_async(parallel%task+1, depth, fields)
+
+END SUBROUTINE clover_exchange
+
+
 SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 
     IMPLICIT NONE
 
-    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+    INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver 
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         !wait until can write
+        IF (left_write_flag .EQ. 0) THEN
+          CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_left(chunk, depth, fields)
+
+        left_write_flag = 0 
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
         !wait until can write
+        IF (right_write_flag .EQ. 0) THEN
+          CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_right(chunk, depth, fields)
+
+        right_write_flag = 0 
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
         !wait until can write
+        IF (bottom_write_flag .EQ. 0) THEN
+          CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
+
+        bottom_write_flag = 0
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
         !wait until can write
+        IF (top_write_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_top(chunk, depth, fields)
+
+        top_write_flag = 0 
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait until can write
+        IF (left_top_write_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(left_top_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_left_top(chunk, depth, fields)
+
+        left_top_write_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait until can write
+        IF (right_top_write_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(right_top_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_right_top(chunk, depth, fields)
+
+        right_top_write_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait until can write
+        IF (right_bottom_write_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_right_bottom(chunk, depth, fields)
+
+        right_bottom_write_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait until can write
+        IF (left_bottom_write_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_write_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+
         !call method to write all buffers in this direction 
         CALL clover_exchange_write_all_buffers_left_bottom(chunk, depth, fields)
+
+        left_bottom_write_flag = 0
+    ENDIF
+
+
+#ifdef FENCE_NOT_QUIET
+    CALL SHMEM_FENCE
+#else
+    CALL SHMEM_QUIET
+#endif
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+      CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+      CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+      CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+      CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+        CALL SHMEM_PUT4_NB(right_bottom_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+        CALL SHMEM_PUT4_NB(left_bottom_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+        CALL SHMEM_PUT4_NB(left_top_rcv_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+        CALL SHMEM_PUT4_NB(right_top_rcv_flag, 1, 1, receiver)
     ENDIF
 
 END SUBROUTINE clover_exchange_send_async
+
+
+SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
+
+    IMPLICIT NONE
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver 
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+        !wait for flag to be set
+        IF (left_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_left(chunk, depth, fields)
+        left_rcv_flag = 0
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        !wait for flag to be set
+        IF (right_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_right(chunk, depth, fields)
+        right_rcv_flag = 0
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+        !wait for flag to be set
+        IF (bottom_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_bottom(chunk, depth, fields)
+        bottom_rcv_flag = 0
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+        !wait for flag to be set
+        IF (top_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_top(chunk, depth, fields)
+        top_rcv_flag = 0
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        !wait for flag to be set
+        IF (left_top_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(left_top_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_left_top(chunk, depth, fields)
+        left_top_rcv_flag = 0
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        !wait for flag to be set
+        IF (right_top_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(right_top_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_right_top(chunk, depth, fields)
+        right_top_rcv_flag = 0
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        !wait for flag to be set
+        IF (right_bottom_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_right_bottom(chunk, depth, fields)
+        right_bottom_rcv_flag = 0
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        !wait for flag to be set
+        IF (left_bottom_rcv_flag .EQ. 0) THEN
+            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        ENDIF
+        !unpack the buffer
+        CALL clover_exchange_unpack_all_buffers_left_bottom(chunk, depth, fields)
+        left_bottom_rcv_flag = 0
+    ENDIF
+
+
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+        CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+        CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+        CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+        CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+        CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+        CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
+    ENDIF
+    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+        CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
+    ENDIF
+
+END SUBROUTINE clover_exchange_receive_async
+
+
 
 SUBROUTINE clover_exchange_write_all_buffers_left(chunk, depth, fields)
 
@@ -705,7 +925,7 @@ SUBROUTINE clover_exchange_write_all_buffers_right(chunk, depth, fields)
 
     INTEGER :: chunk, depth, receiver, topedge, bottomedge, fields(NUM_FIELDS)
 
-    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
 
     topedge = 0
     bottomedge = 0
@@ -783,7 +1003,7 @@ SUBROUTINE clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
 
     IMPLICIT NONE 
 
-    INTEGER :: chunk, depth, receiver, topedge, bottomedge, fields(NUM_FIELDS)
+    INTEGER :: chunk, depth, receiver, topedge, bottomedge, fields(NUM_FIELDS), leftedge, rightedge
 
     receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
 
@@ -864,7 +1084,7 @@ SUBROUTINE clover_exchange_write_all_buffers_top(chunk, depth, fields)
 
     IMPLICIT NONE 
 
-    INTEGER :: chunk, depth, receiver, topedge, bottomedge, fields(NUM_FIELDS)
+    INTEGER :: chunk, depth, receiver, topedge, bottomedge, fields(NUM_FIELDS), leftedge, rightedge
 
     receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
 
@@ -1234,334 +1454,334 @@ END SUBROUTINE clover_exchange_write_all_buffers_left_bottom
 
 
 
-SUBROUTINE clover_exchange(fields,depth)
-
-  IMPLICIT NONE
-
-  INTEGER      :: fields(:),depth
-
-  ! Assuming 1 patch per task, this will be changed
-  ! Also, not packing all fields for each communication, doing one at a time
-
-  IF(fields(FIELD_DENSITY0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%density0,      &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_DENSITY1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%density1,      &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_ENERGY0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%energy0,       &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_ENERGY1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%energy1,       &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_PRESSURE).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%pressure,      &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_VISCOSITY).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%viscosity,     &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%soundspeed,    &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,CELL_DATA)
-  ENDIF
-
-  IF(fields(FIELD_XVEL0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%xvel0,         &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,VERTEX_DATA)
-  ENDIF
-
-  IF(fields(FIELD_XVEL1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%xvel1,         &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,VERTEX_DATA)
-  ENDIF
-
-  IF(fields(FIELD_YVEL0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%yvel0,         &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,VERTEX_DATA)
-  ENDIF
-
-  IF(fields(FIELD_YVEL1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%yvel1,         &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,VERTEX_DATA)
-  ENDIF
-
-  IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%vol_flux_x,    &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,X_FACE_DATA)
-  ENDIF
-
-  IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%vol_flux_y,    &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,Y_FACE_DATA)
-  ENDIF
-
-  IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%mass_flux_x,   &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,X_FACE_DATA)
-  ENDIF
-
-  IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%mass_flux_y,   &
-                                 left_snd_buffer,                                             &
-                                 left_rcv_buffer,                                             &
-                                 right_snd_buffer,                                            &
-                                 right_rcv_buffer,                                            &
-                                 bottom_snd_buffer,                                           &
-                                 bottom_rcv_buffer,                                           &
-                                 top_snd_buffer,                                              &
-                                 top_rcv_buffer,                                              &
-                                 left_top_snd_buffer,                                         &
-                                 left_top_rcv_buffer,                                         &
-                                 right_top_snd_buffer,                                        &
-                                 right_top_rcv_buffer,                                        &
-                                 right_bottom_snd_buffer,                                     &            
-                                 right_bottom_rcv_buffer,                                     &
-                                 left_bottom_snd_buffer,                                      &
-                                 left_bottom_rcv_buffer,                                      &
-                                 depth,Y_FACE_DATA)
-  ENDIF
-
-  CALL SHMEM_BARRIER_ALL()
-
-
-END SUBROUTINE clover_exchange
+!SUBROUTINE clover_exchange(fields,depth)
+!
+!  IMPLICIT NONE
+!
+!  INTEGER      :: fields(:),depth
+!
+!  ! Assuming 1 patch per task, this will be changed
+!  ! Also, not packing all fields for each communication, doing one at a time
+!
+!  IF(fields(FIELD_DENSITY0).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%density0,      &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_DENSITY1).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%density1,      &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_ENERGY0).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%energy0,       &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_ENERGY1).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%energy1,       &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_PRESSURE).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%pressure,      &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%viscosity,     &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%soundspeed,    &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,CELL_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_XVEL0).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%xvel0,         &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,VERTEX_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_XVEL1).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%xvel1,         &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,VERTEX_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_YVEL0).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%yvel0,         &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,VERTEX_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_YVEL1).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%yvel1,         &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,VERTEX_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%vol_flux_x,    &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,X_FACE_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%vol_flux_y,    &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,Y_FACE_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%mass_flux_x,   &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,X_FACE_DATA)
+!  ENDIF
+!
+!  IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+!    CALL clover_exchange_message(parallel%task+1,chunks(parallel%task+1)%field%mass_flux_y,   &
+!                                 left_snd_buffer,                                             &
+!                                 left_rcv_buffer,                                             &
+!                                 right_snd_buffer,                                            &
+!                                 right_rcv_buffer,                                            &
+!                                 bottom_snd_buffer,                                           &
+!                                 bottom_rcv_buffer,                                           &
+!                                 top_snd_buffer,                                              &
+!                                 top_rcv_buffer,                                              &
+!                                 left_top_snd_buffer,                                         &
+!                                 left_top_rcv_buffer,                                         &
+!                                 right_top_snd_buffer,                                        &
+!                                 right_top_rcv_buffer,                                        &
+!                                 right_bottom_snd_buffer,                                     &            
+!                                 right_bottom_rcv_buffer,                                     &
+!                                 left_bottom_snd_buffer,                                      &
+!                                 left_bottom_rcv_buffer,                                      &
+!                                 depth,Y_FACE_DATA)
+!  ENDIF
+!
+!  CALL SHMEM_BARRIER_ALL()
+!
+!
+!END SUBROUTINE clover_exchange
 
 
 SUBROUTINE clover_exchange_write_message_left(chunk, depth, receiver, topedge, bottomedge, field_type, left_snd_buffer, right_rcv_buffer, field)
@@ -1674,7 +1894,7 @@ SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, leftedge, r
 
     IMPLICIT NONE 
 
-    INTEGER :: chunk, depth, receiver, size, field_type, x_inc, y_inc
+    INTEGER :: chunk, depth, receiver, size, field_type, x_inc, y_inc, leftedge, rightedge
     REAL(KIND=8) :: top_snd_buffer(:), bottom_rcv_buffer(:) 
     REAL(KIND=8) :: field(-1:,-1:)
 
@@ -1839,403 +2059,847 @@ SUBROUTINE clover_exchange_write_message_left_bottom(chunk, depth, receiver, siz
 END SUBROUTINE clover_exchange_write_message_left_bottom
 
 
-SUBROUTINE clover_exchange_message(chunk,field,                            &
-                                   left_snd_buffer,                        &
-                                   left_rcv_buffer,                        &
-                                   right_snd_buffer,                       &
-                                   right_rcv_buffer,                       &
-                                   bottom_snd_buffer,                      &
-                                   bottom_rcv_buffer,                      &
-                                   top_snd_buffer,                         &
-                                   top_rcv_buffer,                         &
-                                   left_top_snd_buffer,                                         &
-                                   left_top_rcv_buffer,                                         &
-                                   right_top_snd_buffer,                                        &
-                                   right_top_rcv_buffer,                                        &
-                                   right_bottom_snd_buffer,                                     &            
-                                   right_bottom_rcv_buffer,                                     &
-                                   left_bottom_snd_buffer,                                      &
-                                   left_bottom_rcv_buffer,                                      &
-                                   depth,field_type)
 
-  !USE pack_kernel_module
 
-  IMPLICIT NONE
 
-  REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
-  REAL(KIND=8) :: left_snd_buffer(:),left_rcv_buffer(:),right_snd_buffer(:),right_rcv_buffer(:)
-  REAL(KIND=8) :: bottom_snd_buffer(:),bottom_rcv_buffer(:),top_snd_buffer(:),top_rcv_buffer(:)
+SUBROUTINE clover_exchange_unpack_all_buffers_left(chunk, depth, fields)
 
-  REAL(KIND=8) :: left_top_snd_buffer(:),left_top_rcv_buffer(:),right_top_snd_buffer(:),right_top_rcv_buffer(:)
-  REAL(KIND=8) :: right_bottom_snd_buffer(:),right_bottom_rcv_buffer(:),left_bottom_snd_buffer(:),left_bottom_rcv_buffer(:)
+    IMPLICIT NONE 
 
-  INTEGER      :: chunk,depth,field_type
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
 
-  INTEGER      :: size,x_inc,y_inc
-  INTEGER      :: receiver,sender
-  INTEGER      :: topedge, bottomedge, leftedge, rightedge
-
-  ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
-
-  ! I am packing my own buffers. I am sure this could be improved with MPI data types
-  !  but this will do for now
-
-  ! I am also sending buffers to chunks with the same task id for now.
-  ! This can be improved in the future but at the moment there is just 1 chunk per task anyway
-
-  ! The tag will be a function of the sending chunk and the face it is coming from
-  !  like chunk 6 sending the left face
-
-  ! No open mp in here either. May be beneficial will packing and unpacking in the future, though I am not sure.
-
-  ! Change this so it will allow more than 1 chunk per task
-
-  ! Pack and send
-
-  ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
-  IF(field_type.EQ.CELL_DATA) THEN
-    x_inc=0
-    y_inc=0
-  ENDIF
-  IF(field_type.EQ.VERTEX_DATA) THEN
-    x_inc=1
-    y_inc=1
-  ENDIF
-  IF(field_type.EQ.X_FACE_DATA) THEN
-    x_inc=1
-    y_inc=0
-  ENDIF
-  IF(field_type.EQ.Y_FACE_DATA) THEN
-    x_inc=0
-    y_inc=1
-  ENDIF
-
-  ! Pack real data into buffers
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
-
-    !pack all the data buffers required 
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-        CALL pack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_snd_buffer, field)
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, density0_left_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-        CALL pack_right_buffer_seq(chunk, depth, x_inc, y_inc, right_snd_buffer, field)
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, density1_left_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        CALL pack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_snd_buffer, field)
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, energy0_left_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        CALL pack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_snd_buffer, field)
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, energy1_left_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        CALL pack_left_top_buffer_seq(chunk, depth, x_inc, y_inc, left_top_snd_buffer, field)
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, pressure_left_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        CALL pack_right_top_buffer_seq(chunk, depth, x_inc, y_inc, right_top_snd_buffer, field)
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, viscosity_left_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        CALL pack_right_bottom_buffer_seq(chunk, depth, x_inc, y_inc, right_bottom_snd_buffer, field)
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, CELL_DATA, soundspeed_left_rcv_buffer, chunks(chunk)%field%soundspeed)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        CALL pack_left_bottom_buffer_seq(chunk, depth, x_inc, y_inc, left_bottom_snd_buffer, field)
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_left_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_left_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_left_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_left_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
+END SUBROUTINE clover_exchange_unpack_all_buffers_left
 
-    topedge = 0
-    bottomedge = 0
-    IF (chunks(chunk)%chunk_neighbours(chunk_top).EQ.external_face) THEN
-      topedge = depth
+SUBROUTINE clover_exchange_unpack_all_buffers_right(chunk, depth, fields)
+
+    IMPLICIT NONE 
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, density0_right_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
-    IF (chunks(chunk)%chunk_neighbours(chunk_bottom).EQ.external_face) THEN
-      bottomedge = depth
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, density1_right_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
-    size=(1+(chunks(chunk)%field%y_max+y_inc+topedge)-(chunks(chunk)%field%y_min-bottomedge))*depth
-
-
-    ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-
-      IF (left_write_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
-      
-      left_write_flag = 0 
-
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, energy0_right_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
-
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-
-      IF (right_write_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
-
-      right_write_flag = 0 
-
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, energy1_right_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
-
-    leftedge= 0
-    rightedge= 0
-    IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
-      leftedge = depth
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, pressure_right_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
-    IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
-      rightedge = depth
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, viscosity_right_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
-    size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
-
-    ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-
-      IF (bottom_write_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-
-      CALL SHMEM_PUT64_NB(top_rcv_buffer, bottom_snd_buffer, size, receiver)
-      bottom_write_flag = 0
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, CELL_DATA, soundspeed_right_rcv_buffer, chunks(chunk)%field%soundspeed)
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_right_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_right_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_right_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_right_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+END SUBROUTINE clover_exchange_unpack_all_buffers_right
 
-        IF (top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
 
-        CALL SHMEM_PUT64_NB(bottom_rcv_buffer, top_snd_buffer, size, receiver)
-        top_write_flag = 0 
+SUBROUTINE clover_exchange_unpack_all_buffers_bottom(chunk, depth, fields)
+
+    IMPLICIT NONE 
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, density0_bottom_rcv_buffer, chunks(chunk)%field%density0)
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, density1_bottom_rcv_buffer, chunks(chunk)%field%density1)
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, energy0_bottom_rcv_buffer, chunks(chunk)%field%energy0)
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, energy1_bottom_rcv_buffer, chunks(chunk)%field%energy1)
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, pressure_bottom_rcv_buffer, chunks(chunk)%field%pressure)
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, viscosity_bottom_rcv_buffer, chunks(chunk)%field%viscosity)
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, CELL_DATA, soundspeed_bottom_rcv_buffer, chunks(chunk)%field%soundspeed)
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_bottom_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
+END SUBROUTINE clover_exchange_unpack_all_buffers_bottom
 
-    size = depth*depth
+SUBROUTINE clover_exchange_unpack_all_buffers_top(chunk, depth, fields)
 
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+    IMPLICIT NONE 
 
-        IF (left_top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
 
-        CALL SHMEM_PUT64_NB(right_bottom_rcv_buffer, left_top_snd_buffer, size, receiver)
-        left_top_write_flag = 0
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, density0_top_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
-    
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
-
-        IF (right_top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        CALL SHMEM_PUT64_NB(left_bottom_rcv_buffer, right_top_snd_buffer, size, receiver)
-        right_top_write_flag = 0
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, density1_top_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
-    
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
-
-        IF (right_bottom_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        CALL SHMEM_PUT64_NB(left_top_rcv_buffer, right_bottom_snd_buffer, size, receiver)
-        right_bottom_write_flag = 0
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, energy0_top_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
-    
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-       receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
-
-       IF (left_bottom_write_flag .EQ. 0) THEN
-           CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_write_flag, SHMEM_CMP_EQ, 1)
-       ENDIF
-
-       CALL SHMEM_PUT64_NB(right_top_rcv_buffer, left_bottom_snd_buffer, size, receiver)
-       left_bottom_write_flag = 0
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, energy1_top_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
-
-  ENDIF
-
-  ! Wait for the messages
-#ifdef FENCE_NOT_QUIET
-        CALL SHMEM_FENCE
-#else
-        CALL SHMEM_QUIET
-#endif
-
-
-
-
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
-
-    ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-      CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, pressure_top_rcv_buffer, chunks(chunk)%field%pressure)
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, viscosity_top_rcv_buffer, chunks(chunk)%field%viscosity)
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, CELL_DATA, soundspeed_top_rcv_buffer, chunks(chunk)%field%soundspeed)
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_top_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_top_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_top_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_top_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_top_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_top_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_top_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_top_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_top_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-      CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+END SUBROUTINE clover_exchange_unpack_all_buffers_top
+
+SUBROUTINE clover_exchange_unpack_all_buffers_left_top(chunk, depth, fields)
+
+    IMPLICIT NONE 
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, density0_left_top_rcv_buffer, chunks(chunk)%field%density0)
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, density1_left_top_rcv_buffer, chunks(chunk)%field%density1)
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, energy0_left_top_rcv_buffer, chunks(chunk)%field%energy0)
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, energy1_left_top_rcv_buffer, chunks(chunk)%field%energy1)
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, pressure_left_top_rcv_buffer, chunks(chunk)%field%pressure)
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, viscosity_left_top_rcv_buffer, chunks(chunk)%field%viscosity)
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, CELL_DATA, soundspeed_left_top_rcv_buffer, chunks(chunk)%field%soundspeed)
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_top_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_top_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_top_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_top_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_left_top_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_left_top_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_left_top_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_top_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_left_top_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-      CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
+END SUBROUTINE clover_exchange_unpack_all_buffers_left_top
+
+SUBROUTINE clover_exchange_unpack_all_buffers_right_top(chunk, depth, fields)
+
+    IMPLICIT NONE 
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, density0_right_top_rcv_buffer, chunks(chunk)%field%density0)
+    ENDIF
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, density1_right_top_rcv_buffer, chunks(chunk)%field%density1)
+    ENDIF
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, energy0_right_top_rcv_buffer, chunks(chunk)%field%energy0)
+    ENDIF
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, energy1_right_top_rcv_buffer, chunks(chunk)%field%energy1)
+    ENDIF
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, pressure_right_top_rcv_buffer, chunks(chunk)%field%pressure)
+    ENDIF
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, viscosity_right_top_rcv_buffer, chunks(chunk)%field%viscosity)
+    ENDIF
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, CELL_DATA, soundspeed_right_top_rcv_buffer, chunks(chunk)%field%soundspeed)
+    ENDIF
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_top_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_top_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_top_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_top_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_right_top_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_right_top_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_right_top_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_top_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_right_top_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-      CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
-        CALL SHMEM_PUT4_NB(right_bottom_rcv_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
-        CALL SHMEM_PUT4_NB(left_bottom_rcv_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
-        CALL SHMEM_PUT4_NB(left_top_rcv_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
-        CALL SHMEM_PUT4_NB(right_top_rcv_flag, 1, 1, receiver)
-    ENDIF
-  ENDIF
+END SUBROUTINE clover_exchange_unpack_all_buffers_right_top
 
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+SUBROUTINE clover_exchange_unpack_all_buffers_right_bottom(chunk, depth, fields)
 
-    ! Send/receive the data
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      IF (left_rcv_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      left_rcv_flag = 0
-    ENDIF
+    IMPLICIT NONE 
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      IF (right_rcv_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      right_rcv_flag = 0
-    ENDIF
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      IF (bottom_rcv_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      bottom_rcv_flag = 0
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, density0_right_bottom_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
-
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      IF (top_rcv_flag .EQ. 0) THEN
-        CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
-      ENDIF
-      top_rcv_flag = 0
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, density1_right_bottom_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        IF (left_top_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_top_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-        left_top_rcv_flag = 0
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, energy0_right_bottom_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        IF (right_top_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_top_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-        right_top_rcv_flag = 0
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, energy1_right_bottom_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        IF (right_bottom_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-        right_bottom_rcv_flag = 0
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, pressure_right_bottom_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        IF (left_bottom_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-        left_bottom_rcv_flag = 0
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, viscosity_right_bottom_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
-  ENDIF
-
-
-
-
-
-  ! Unpack buffers in halo cells
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
-
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-        CALL unpack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_rcv_buffer, field)
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, CELL_DATA, soundspeed_right_bottom_rcv_buffer, chunks(chunk)%field%soundspeed)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-        CALL unpack_right_buffer_seq(chunk, depth, x_inc, y_inc, right_rcv_buffer, field)
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_bottom_rcv_buffer, chunks(chunk)%field%xvel0)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        CALL unpack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_rcv_buffer, field)
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        CALL unpack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_rcv_buffer, field)
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        CALL unpack_left_top_buffer_seq(chunk, depth, x_inc, y_inc, left_top_rcv_buffer, field)
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        CALL unpack_right_top_buffer_seq(chunk, depth, x_inc, y_inc, right_top_rcv_buffer, field)
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_right_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_x)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        CALL unpack_right_bottom_buffer_seq(chunk, depth, x_inc, y_inc, right_bottom_rcv_buffer, field)
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_right_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_y)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        CALL unpack_left_bottom_buffer_seq(chunk, depth, x_inc, y_inc, left_bottom_rcv_buffer, field)
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_right_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_right_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-  ENDIF
+END SUBROUTINE clover_exchange_unpack_all_buffers_right_bottom
 
-  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+SUBROUTINE clover_exchange_unpack_all_buffers_left_bottom(chunk, depth, fields)
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-      CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
+    IMPLICIT NONE 
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
+
+    IF(fields(FIELD_DENSITY0).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, density0_left_bottom_rcv_buffer, chunks(chunk)%field%density0)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-      CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_DENSITY1).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, density1_left_bottom_rcv_buffer, chunks(chunk)%field%density1)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-      CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_ENERGY0).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, energy0_left_bottom_rcv_buffer, chunks(chunk)%field%energy0)
     ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-      CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_ENERGY1).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, energy1_left_bottom_rcv_buffer, chunks(chunk)%field%energy1)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
-        CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_PRESSURE).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, pressure_left_bottom_rcv_buffer, chunks(chunk)%field%pressure)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
-        CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_VISCOSITY).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, viscosity_left_bottom_rcv_buffer, chunks(chunk)%field%viscosity)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
-        CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, CELL_DATA, soundspeed_left_bottom_rcv_buffer, chunks(chunk)%field%soundspeed)
     ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
-        CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
+    IF(fields(FIELD_XVEL0).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_bottom_rcv_buffer, chunks(chunk)%field%xvel0)
+    ENDIF
+    IF(fields(FIELD_XVEL1).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
+    ENDIF
+    IF(fields(FIELD_YVEL0).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
+    ENDIF
+    IF(fields(FIELD_YVEL1).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, X_FACE_DATA, volflux_x_left_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_x)
+    ENDIF
+    IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, volflux_y_left_bottom_rcv_buffer, chunks(chunk)%field%vol_flux_y)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, X_FACE_DATA, massflux_x_left_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_x)
+    ENDIF
+    IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, Y_FACE_DATA, massflux_y_left_bottom_rcv_buffer, chunks(chunk)%field%mass_flux_y)
     ENDIF
 
-  ENDIF
+END SUBROUTINE clover_exchange_unpack_all_buffers_left_bottom
 
-END SUBROUTINE clover_exchange_message
+
+
+
+!SUBROUTINE clover_exchange_message(chunk,field,                            &
+!                                   left_snd_buffer,                        &
+!                                   left_rcv_buffer,                        &
+!                                   right_snd_buffer,                       &
+!                                   right_rcv_buffer,                       &
+!                                   bottom_snd_buffer,                      &
+!                                   bottom_rcv_buffer,                      &
+!                                   top_snd_buffer,                         &
+!                                   top_rcv_buffer,                         &
+!                                   left_top_snd_buffer,                                         &
+!                                   left_top_rcv_buffer,                                         &
+!                                   right_top_snd_buffer,                                        &
+!                                   right_top_rcv_buffer,                                        &
+!                                   right_bottom_snd_buffer,                                     &            
+!                                   right_bottom_rcv_buffer,                                     &
+!                                   left_bottom_snd_buffer,                                      &
+!                                   left_bottom_rcv_buffer,                                      &
+!                                   depth,field_type)
+!
+!  !USE pack_kernel_module
+!
+!  IMPLICIT NONE
+!
+!  REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
+!  REAL(KIND=8) :: left_snd_buffer(:),left_rcv_buffer(:),right_snd_buffer(:),right_rcv_buffer(:)
+!  REAL(KIND=8) :: bottom_snd_buffer(:),bottom_rcv_buffer(:),top_snd_buffer(:),top_rcv_buffer(:)
+!
+!  REAL(KIND=8) :: left_top_snd_buffer(:),left_top_rcv_buffer(:),right_top_snd_buffer(:),right_top_rcv_buffer(:)
+!  REAL(KIND=8) :: right_bottom_snd_buffer(:),right_bottom_rcv_buffer(:),left_bottom_snd_buffer(:),left_bottom_rcv_buffer(:)
+!
+!  INTEGER      :: chunk,depth,field_type
+!
+!  INTEGER      :: size,x_inc,y_inc
+!  INTEGER      :: receiver,sender
+!  INTEGER      :: topedge, bottomedge, leftedge, rightedge
+!
+!  ! Field type will either be cell, vertex, x_face or y_face to get the message limits correct
+!
+!  ! I am packing my own buffers. I am sure this could be improved with MPI data types
+!  !  but this will do for now
+!
+!  ! I am also sending buffers to chunks with the same task id for now.
+!  ! This can be improved in the future but at the moment there is just 1 chunk per task anyway
+!
+!  ! The tag will be a function of the sending chunk and the face it is coming from
+!  !  like chunk 6 sending the left face
+!
+!  ! No open mp in here either. May be beneficial will packing and unpacking in the future, though I am not sure.
+!
+!  ! Change this so it will allow more than 1 chunk per task
+!
+!  ! Pack and send
+!
+!  ! These array modifications still need to be added on, plus the donor data location changes as in update_halo
+!  IF(field_type.EQ.CELL_DATA) THEN
+!    x_inc=0
+!    y_inc=0
+!  ENDIF
+!  IF(field_type.EQ.VERTEX_DATA) THEN
+!    x_inc=1
+!    y_inc=1
+!  ENDIF
+!  IF(field_type.EQ.X_FACE_DATA) THEN
+!    x_inc=1
+!    y_inc=0
+!  ENDIF
+!  IF(field_type.EQ.Y_FACE_DATA) THEN
+!    x_inc=0
+!    y_inc=1
+!  ENDIF
+!
+!  ! Pack real data into buffers
+!  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+!
+!    !pack all the data buffers required 
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!        CALL pack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_snd_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!        CALL pack_right_buffer_seq(chunk, depth, x_inc, y_inc, right_snd_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!        CALL pack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_snd_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!        CALL pack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_snd_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        CALL pack_left_top_buffer_seq(chunk, depth, x_inc, y_inc, left_top_snd_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        CALL pack_right_top_buffer_seq(chunk, depth, x_inc, y_inc, right_top_snd_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        CALL pack_right_bottom_buffer_seq(chunk, depth, x_inc, y_inc, right_bottom_snd_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        CALL pack_left_bottom_buffer_seq(chunk, depth, x_inc, y_inc, left_bottom_snd_buffer, field)
+!    ENDIF
+!
+!
+!    topedge = 0
+!    bottomedge = 0
+!    IF (chunks(chunk)%chunk_neighbours(chunk_top).EQ.external_face) THEN
+!      topedge = depth
+!    ENDIF
+!    IF (chunks(chunk)%chunk_neighbours(chunk_bottom).EQ.external_face) THEN
+!      bottomedge = depth
+!    ENDIF
+!    size=(1+(chunks(chunk)%field%y_max+y_inc+topedge)-(chunks(chunk)%field%y_min-bottomedge))*depth
+!
+!
+!    ! Send/receive the data
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+!
+!      IF (left_write_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+!      
+!      left_write_flag = 0 
+!
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+!
+!      IF (right_write_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+!
+!      right_write_flag = 0 
+!
+!    ENDIF
+!
+!    leftedge= 0
+!    rightedge= 0
+!    IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
+!      leftedge = depth
+!    ENDIF
+!    IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
+!      rightedge = depth
+!    ENDIF
+!    size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
+!
+!    ! Send/receive the data
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+!
+!      IF (bottom_write_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!
+!      CALL SHMEM_PUT64_NB(top_rcv_buffer, bottom_snd_buffer, size, receiver)
+!      bottom_write_flag = 0
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+!
+!        IF (top_write_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!
+!        CALL SHMEM_PUT64_NB(bottom_rcv_buffer, top_snd_buffer, size, receiver)
+!        top_write_flag = 0 
+!    ENDIF
+!
+!
+!    size = depth*depth
+!
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+!
+!        IF (left_top_write_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(left_top_write_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!
+!        CALL SHMEM_PUT64_NB(right_bottom_rcv_buffer, left_top_snd_buffer, size, receiver)
+!        left_top_write_flag = 0
+!    ENDIF
+!    
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+!
+!        IF (right_top_write_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(right_top_write_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!
+!        CALL SHMEM_PUT64_NB(left_bottom_rcv_buffer, right_top_snd_buffer, size, receiver)
+!        right_top_write_flag = 0
+!    ENDIF
+!    
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+!
+!        IF (right_bottom_write_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_write_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!
+!        CALL SHMEM_PUT64_NB(left_top_rcv_buffer, right_bottom_snd_buffer, size, receiver)
+!        right_bottom_write_flag = 0
+!    ENDIF
+!    
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!       receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+!
+!       IF (left_bottom_write_flag .EQ. 0) THEN
+!           CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_write_flag, SHMEM_CMP_EQ, 1)
+!       ENDIF
+!
+!       CALL SHMEM_PUT64_NB(right_top_rcv_buffer, left_bottom_snd_buffer, size, receiver)
+!       left_bottom_write_flag = 0
+!    ENDIF
+!
+!  ENDIF
+!
+!  ! Wait for the messages
+!#ifdef FENCE_NOT_QUIET
+!        CALL SHMEM_FENCE
+!#else
+!        CALL SHMEM_QUIET
+!#endif
+!
+!
+!
+!
+!  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+!
+!    ! Send/receive the data
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+!      CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+!      CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+!      CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+!      CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+!        CALL SHMEM_PUT4_NB(right_bottom_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+!        CALL SHMEM_PUT4_NB(left_bottom_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+!        CALL SHMEM_PUT4_NB(left_top_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+!        CALL SHMEM_PUT4_NB(right_top_rcv_flag, 1, 1, receiver)
+!    ENDIF
+!  ENDIF
+!
+!  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+!
+!    ! Send/receive the data
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!      IF (left_rcv_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      left_rcv_flag = 0
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!      IF (right_rcv_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      right_rcv_flag = 0
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!      IF (bottom_rcv_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      bottom_rcv_flag = 0
+!    ENDIF
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!      IF (top_rcv_flag .EQ. 0) THEN
+!        CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
+!      ENDIF
+!      top_rcv_flag = 0
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        IF (left_top_rcv_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(left_top_rcv_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!        left_top_rcv_flag = 0
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        IF (right_top_rcv_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(right_top_rcv_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!        right_top_rcv_flag = 0
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        IF (right_bottom_rcv_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!        right_bottom_rcv_flag = 0
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        IF (left_bottom_rcv_flag .EQ. 0) THEN
+!            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+!        ENDIF
+!        left_bottom_rcv_flag = 0
+!    ENDIF
+!  ENDIF
+!
+!
+!
+!
+!
+!  ! Unpack buffers in halo cells
+!  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!        CALL unpack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_rcv_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!        CALL unpack_right_buffer_seq(chunk, depth, x_inc, y_inc, right_rcv_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!        CALL unpack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_rcv_buffer, field)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!        CALL unpack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_rcv_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        CALL unpack_left_top_buffer_seq(chunk, depth, x_inc, y_inc, left_top_rcv_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        CALL unpack_right_top_buffer_seq(chunk, depth, x_inc, y_inc, right_top_rcv_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        CALL unpack_right_bottom_buffer_seq(chunk, depth, x_inc, y_inc, right_bottom_rcv_buffer, field)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        CALL unpack_left_bottom_buffer_seq(chunk, depth, x_inc, y_inc, left_bottom_rcv_buffer, field)
+!    ENDIF
+!
+!  ENDIF
+!
+!  IF(parallel%task.EQ.chunks(chunk)%task) THEN
+!
+!    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+!      CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+!      CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+!      CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+!      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+!      CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+!        CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+!        CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+!        CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
+!    ENDIF
+!    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
+!        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+!        CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
+!    ENDIF
+!
+!  ENDIF
+!
+!END SUBROUTINE clover_exchange_message
+
+
+
+
+
 
 SUBROUTINE clover_sum(value)
 
