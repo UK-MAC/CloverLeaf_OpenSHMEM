@@ -687,20 +687,20 @@ SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 #endif
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-      CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+        CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-      CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+        CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-      CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+        CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-      receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-      CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
+        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+        CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
@@ -850,10 +850,10 @@ SUBROUTINE clover_exchange_write_all_buffers_left(chunk, depth, fields)
     topedge = 0
     bottomedge = 0
     IF (chunks(chunk)%chunk_neighbours(chunk_top).EQ.external_face) THEN
-      topedge = depth
+        topedge = depth
     ENDIF
     IF (chunks(chunk)%chunk_neighbours(chunk_bottom).EQ.external_face) THEN
-      bottomedge = depth
+        bottomedge = depth
     ENDIF
 
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
@@ -930,10 +930,10 @@ SUBROUTINE clover_exchange_write_all_buffers_right(chunk, depth, fields)
     topedge = 0
     bottomedge = 0
     IF (chunks(chunk)%chunk_neighbours(chunk_top).EQ.external_face) THEN
-      topedge = depth
+        topedge = depth
     ENDIF
     IF (chunks(chunk)%chunk_neighbours(chunk_bottom).EQ.external_face) THEN
-      bottomedge = depth
+        bottomedge = depth
     ENDIF
 
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
@@ -1010,10 +1010,10 @@ SUBROUTINE clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
     leftedge= 0
     rightedge= 0
     IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
-      leftedge = depth
+        leftedge = depth
     ENDIF
     IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
-      rightedge = depth
+        rightedge = depth
     ENDIF
 
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
@@ -1091,10 +1091,10 @@ SUBROUTINE clover_exchange_write_all_buffers_top(chunk, depth, fields)
     leftedge= 0
     rightedge= 0
     IF (chunks(chunk)%chunk_neighbours(chunk_left).EQ.external_face) THEN
-      leftedge = depth
+        leftedge = depth
     ENDIF
     IF (chunks(chunk)%chunk_neighbours(chunk_right).EQ.external_face) THEN
-      rightedge = depth
+        rightedge = depth
     ENDIF
 
     IF(fields(FIELD_DENSITY0).EQ.1) THEN
@@ -1793,20 +1793,20 @@ SUBROUTINE clover_exchange_write_message_left(chunk, depth, receiver, topedge, b
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
 
@@ -1829,20 +1829,20 @@ SUBROUTINE clover_exchange_write_message_right(chunk, depth, receiver, topedge, 
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     size=(1+(chunks(chunk)%field%y_max+y_inc+topedge)-(chunks(chunk)%field%y_min-bottomedge))*depth
@@ -1864,20 +1864,20 @@ SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
@@ -1899,20 +1899,20 @@ SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, leftedge, r
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     size=(1+(chunks(chunk)%field%x_max+x_inc+rightedge)-(chunks(chunk)%field%x_min-leftedge))*depth
@@ -1935,20 +1935,20 @@ SUBROUTINE clover_exchange_write_message_left_top(chunk, depth, receiver, size, 
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     ! pack buffer 
@@ -1968,20 +1968,20 @@ SUBROUTINE clover_exchange_write_message_right_top(chunk, depth, receiver, size,
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     ! pack buffer 
@@ -2001,20 +2001,20 @@ SUBROUTINE clover_exchange_write_message_right_bottom(chunk, depth, receiver, si
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     ! pack buffer 
@@ -2034,20 +2034,20 @@ SUBROUTINE clover_exchange_write_message_left_bottom(chunk, depth, receiver, siz
     REAL(KIND=8) :: field(-1:,-1:)
 
     IF(field_type.EQ.CELL_DATA) THEN
-      x_inc=0
-      y_inc=0
+        x_inc=0
+        y_inc=0
     ENDIF
     IF(field_type.EQ.VERTEX_DATA) THEN
-      x_inc=1
-      y_inc=1
+        x_inc=1
+        y_inc=1
     ENDIF
     IF(field_type.EQ.X_FACE_DATA) THEN
-      x_inc=1
-      y_inc=0
+        x_inc=1
+        y_inc=0
     ENDIF
     IF(field_type.EQ.Y_FACE_DATA) THEN
-      x_inc=0
-      y_inc=1
+        x_inc=0
+        y_inc=1
     ENDIF
 
     ! pack buffer 
