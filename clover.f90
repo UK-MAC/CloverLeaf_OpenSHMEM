@@ -570,41 +570,51 @@ SUBROUTINE clover_allocate_buffers(chunk)
 
 END SUBROUTINE clover_allocate_buffers
 
-SUBROUTINE clover_exchange_send_async()
+SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 
     IMPLICIT NONE
+
+    INTEGER :: chunk, depth, fields(NUM_FIELDS)
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_left(chunk, depth, fields)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_right(chunk, depth, fields)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_top(chunk, depth, fields)
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_left_top(chunk, depth, fields)
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_right_top(chunk, depth, fields)
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_right_bottom(chunk, depth, fields)
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait until can write
         !call method to write all buffers in this direction 
+        CALL clover_exchange_write_all_buffers_left_bottom(chunk, depth, fields)
     ENDIF
 
 END SUBROUTINE clover_exchange_send_async
