@@ -36,7 +36,7 @@ SUBROUTINE field_summary()
   REAL(KIND=8) :: qa_diff
 
 
-  INTEGER      :: c
+  INTEGER      :: c, fields(NUM_FIELDS)
 
   REAL(KIND=8) :: kernel_time,timer
 
@@ -47,8 +47,9 @@ SUBROUTINE field_summary()
   ENDIF
 
   IF(profiler_on) kernel_time=timer()
+  fields=0
   DO c=1,number_of_chunks
-    CALL ideal_gas(c,.FALSE.)
+    CALL ideal_gas(c,.FALSE.,fields,1,.FALSE.)
   ENDDO
   IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
 

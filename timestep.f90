@@ -55,20 +55,21 @@ SUBROUTINE timestep()
   dt    = g_big
   small=0
 
-  IF(profiler_on) kernel_time=timer()
-  DO c = 1, number_of_chunks
-    CALL ideal_gas(c,.FALSE.)
-  END DO
-  IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
-
   fields=0
   fields(FIELD_PRESSURE)=1
   fields(FIELD_ENERGY0)=1
   fields(FIELD_DENSITY0)=1
   fields(FIELD_XVEL0)=1
   fields(FIELD_YVEL0)=1
+
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,1)
+  DO c = 1, number_of_chunks
+    CALL ideal_gas(c,.FALSE.,fields,1,.TRUE.)
+  END DO
+  IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
+
+  IF(profiler_on) kernel_time=timer()
+  CALL update_halo(fields,1,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
   IF(profiler_on) kernel_time=timer()
@@ -78,7 +79,7 @@ SUBROUTINE timestep()
   fields=0
   fields(FIELD_VISCOSITY)=1
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,1)
+  CALL update_halo(fields,1,.TRUE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
   IF(profiler_on) kernel_time=timer()

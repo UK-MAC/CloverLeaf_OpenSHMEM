@@ -123,10 +123,6 @@ SUBROUTINE start
   profiler_off=profiler_on
   profiler_on=.FALSE.
 
-  DO c = 1, number_of_chunks
-    CALL ideal_gas(c,.FALSE.)
-  END DO
-
   ! Prime all halo data for the first step
   fields=0
   fields(FIELD_DENSITY0)=1
@@ -140,7 +136,12 @@ SUBROUTINE start
   fields(FIELD_XVEL1)=1
   fields(FIELD_YVEL1)=1
 
-  CALL update_halo(fields,2)
+  DO c = 1, number_of_chunks
+    CALL ideal_gas(c,.FALSE.,fields,2,.TRUE.)
+  END DO
+
+
+  CALL update_halo(fields,2,.FALSE.)
 
   IF(parallel%boss)THEN
      WRITE(g_out,*)

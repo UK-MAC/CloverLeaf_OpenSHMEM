@@ -24,7 +24,7 @@ MODULE update_halo_module
 
 CONTAINS
 
-SUBROUTINE update_halo(fields,depth)
+SUBROUTINE update_halo(fields,depth, exchange)
 
   USE clover_module
   USE update_halo_kernel_module
@@ -32,8 +32,11 @@ SUBROUTINE update_halo(fields,depth)
   IMPLICIT NONE
 
   INTEGER :: c,fields(NUM_FIELDS),depth
+  LOGICAL :: exchange
 
-  CALL clover_exchange(fields,depth)
+  IF (exchange) THEN
+    CALL clover_exchange(fields,depth)
+  ENDIF
 
   DO c=1,number_of_chunks
 

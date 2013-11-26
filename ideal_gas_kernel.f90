@@ -22,6 +22,8 @@
 
 MODULE ideal_gas_kernel_module
 
+USE clover_module
+
 CONTAINS
 
 SUBROUTINE ideal_gas_kernel(x_min,x_max,y_min,y_max,                &
@@ -57,7 +59,7 @@ SUBROUTINE ideal_gas_kernel(x_min,x_max,y_min,y_max,                &
         CALL ideal_gas_kernel_real(x_min+depth,x_max-depth,y_max-depth+1,y_max,x_min,x_max,y_min,y_max,density,energy,pressure,soundspeed)
 
         !send all the fields and post receives before doing the remainder of the compute
-        CALL clover_exchange_send_async(depth, fields,)
+        CALL clover_exchange_send_async(depth, fields)
 
         ! compute remaining cells in the centre, overlapping with comms
         CALL ideal_gas_kernel_real(x_min+depth,x_max-depth,y_min+depth,y_max-depth,x_min,x_max,y_min,y_max,density,energy,pressure,soundspeed)

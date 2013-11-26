@@ -112,15 +112,17 @@ SUBROUTINE PdV(predict)
   ENDIF
 
   IF(predict)THEN
+
     IF(profiler_on) kernel_time=timer()
-    DO c=1,number_of_chunks
-      CALL ideal_gas(c,.TRUE.)
-    ENDDO
-    IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
     fields=0
     fields(FIELD_PRESSURE)=1
+    DO c=1,number_of_chunks
+      CALL ideal_gas(c,.TRUE.,fields,1,.TRUE.)
+    ENDDO
+    IF(profiler_on) profiler%ideal_gas=profiler%ideal_gas+(timer()-kernel_time)
+
     IF(profiler_on) kernel_time=timer()
-    CALL update_halo(fields,1)
+    CALL update_halo(fields,1,.FALSE.)
     IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
   ENDIF
 

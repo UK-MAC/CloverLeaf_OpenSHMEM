@@ -577,18 +577,19 @@ SUBROUTINE clover_exchange(fields,depth)
 
     INTEGER      :: fields(:),depth
 
-    CALL clover_exchange_send_async(parallel%task+1, depth, fields)
+    CALL clover_exchange_send_async(depth, fields)
 
-    CALL clover_exchange_receive_async(parallel%task+1, depth, fields)
+    CALL clover_exchange_receive_async(depth, fields)
 
 END SUBROUTINE clover_exchange
 
 
-SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
+SUBROUTINE clover_exchange_send_async(depth, fields)
 
     IMPLICIT NONE
 
     INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver 
+    chunk = parallel%task+1
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         !wait until can write
@@ -722,11 +723,12 @@ SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 END SUBROUTINE clover_exchange_send_async
 
 
-SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
+SUBROUTINE clover_exchange_receive_async(depth, fields)
 
     IMPLICIT NONE
 
     INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver 
+    chunk = parallel%task+1
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         !wait for flag to be set
