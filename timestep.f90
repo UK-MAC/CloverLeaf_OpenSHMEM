@@ -72,14 +72,14 @@ SUBROUTINE timestep()
   CALL update_halo(fields,1,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
-  IF(profiler_on) kernel_time=timer()
-  CALL viscosity()
-  IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
-
   fields=0
   fields(FIELD_VISCOSITY)=1
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,1,.TRUE.)
+  CALL viscosity(fields,1,.TRUE.)
+  IF(profiler_on) profiler%viscosity=profiler%viscosity+(timer()-kernel_time)
+
+  IF(profiler_on) kernel_time=timer()
+  CALL update_halo(fields,1,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
   IF(profiler_on) kernel_time=timer()
