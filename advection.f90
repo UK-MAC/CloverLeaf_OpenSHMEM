@@ -55,11 +55,7 @@ SUBROUTINE advection()
   CALL update_halo(fields,2,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
 
-  IF(profiler_on) kernel_time=timer()
-  DO c=1,number_of_chunks
-    CALL advec_cell_driver(c,sweep_number,direction)
-  ENDDO
-  IF(profiler_on) profiler%cell_advection=profiler%cell_advection+(timer()-kernel_time)
+
 
   fields=0
   fields(FIELD_DENSITY1)=1
@@ -69,8 +65,17 @@ SUBROUTINE advection()
   fields(FIELD_MASS_FLUX_X)=1
   fields(FIELD_MASS_FLUX_y)=1
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,2,.TRUE.)
+  DO c=1,number_of_chunks
+    CALL advec_cell_driver(c,sweep_number,direction,fields,2,.TRUE.)
+  ENDDO
+  IF(profiler_on) profiler%cell_advection=profiler%cell_advection+(timer()-kernel_time)
+
+  IF(profiler_on) kernel_time=timer()
+  CALL update_halo(fields,2,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
+
+
+
 
   IF(profiler_on) kernel_time=timer()
   DO c=1,number_of_chunks
@@ -85,11 +90,7 @@ SUBROUTINE advection()
   IF(advect_x)      direction=g_ydir
   IF(.not.advect_x) direction=g_xdir
 
-  IF(profiler_on) kernel_time=timer()
-  DO c=1,number_of_chunks
-    CALL advec_cell_driver(c,sweep_number,direction)
-  ENDDO
-  IF(profiler_on) profiler%cell_advection=profiler%cell_advection+(timer()-kernel_time)
+
 
   fields=0
   fields(FIELD_DENSITY1)=1
@@ -99,8 +100,15 @@ SUBROUTINE advection()
   fields(FIELD_MASS_FLUX_X)=1
   fields(FIELD_MASS_FLUX_y)=1
   IF(profiler_on) kernel_time=timer()
-  CALL update_halo(fields,2,.TRUE.)
+  DO c=1,number_of_chunks
+    CALL advec_cell_driver(c,sweep_number,direction,fields,2,.TRUE.)
+  ENDDO
+  IF(profiler_on) profiler%cell_advection=profiler%cell_advection+(timer()-kernel_time)
+
+  IF(profiler_on) kernel_time=timer()
+  CALL update_halo(fields,2,.FALSE.)
   IF(profiler_on) profiler%halo_exchange=profiler%halo_exchange+(timer()-kernel_time)
+
 
   IF(profiler_on) kernel_time=timer()
   DO c=1,number_of_chunks
