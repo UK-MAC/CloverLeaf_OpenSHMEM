@@ -698,6 +698,7 @@ MODULE definitions_module
   TYPE(chunk_type),  ALLOCATABLE       :: chunks(:)
   INTEGER                              :: number_of_chunks
   INTEGER                              :: num_chunks_x, num_chunks_y
+  INTEGER                              :: num_neighbours 
 
   TYPE(grid_type)                      :: grid
 

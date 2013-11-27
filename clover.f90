@@ -59,10 +59,10 @@ MODULE clover_module
 
   INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-  INTEGER(KIND=4) :: left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
-  INTEGER(KIND=4) :: top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
-  INTEGER(KIND=4) :: left_top_rcv_flag, right_top_rcv_flag, right_bottom_rcv_flag, left_bottom_rcv_flag
-  INTEGER(KIND=4) :: left_top_write_flag, right_top_write_flag, right_bottom_write_flag, left_bottom_write_flag
+  INTEGER(KIND=4), VOLATILE :: left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag
+  INTEGER(KIND=4), VOLATILE :: top_rcv_flag, bottom_rcv_flag, top_write_flag, bottom_write_flag
+  INTEGER(KIND=4), VOLATILE :: left_top_rcv_flag, right_top_rcv_flag, right_bottom_rcv_flag, left_bottom_rcv_flag
+  INTEGER(KIND=4), VOLATILE :: left_top_write_flag, right_top_write_flag, right_bottom_write_flag, left_bottom_write_flag
 
   COMMON/FLAG/left_rcv_flag, right_rcv_flag, left_write_flag, right_write_flag, top_rcv_flag, bottom_rcv_flag, & 
               top_write_flag, bottom_write_flag, left_top_rcv_flag, right_top_rcv_flag, right_bottom_rcv_flag, & 
@@ -550,6 +550,34 @@ SUBROUTINE clover_allocate_buffers(chunk)
 
     WRITE(*,*) "Successfully shpalloc'd the comms buffers"
 
+    num_neighbours = 0
+    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF ((chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF ((chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face)) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+    IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face)) THEN
+        num_neighbours = num_neighbours + 1 
+    ENDIF
+
+    WRITE (*,*) "process: ", parallel%task, " num neighbours: ", num_neighbours
+
     !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
     !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
     !  ALLOCATE(chunks(chunk)%left_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
@@ -588,96 +616,131 @@ SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 
     IMPLICIT NONE
 
-    INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver 
+    INTEGER :: chunk, depth, fields(NUM_FIELDS), receiver, mess_to_send
+    LOGICAL :: left_sent, right_sent, bottom_sent, top_sent, left_top_sent, right_top_sent, right_bottom_sent, left_bottom_sent
 
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-        !wait until can write
-        IF (left_write_flag .EQ. 0) THEN
-          CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+    mess_to_send = num_neighbours 
+    left_sent = .FALSE.
+    right_sent = .FALSE.
+    bottom_sent = .FALSE.
+    top_sent = .FALSE.
+    left_top_sent = .FALSE.
+    right_top_sent = .FALSE.
+    right_bottom_sent = .FALSE.
+    left_bottom_sent = .FALSE.
+
+    DO WHILE (mess_to_send .EQ. 0)
+
+        IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (left_sent.EQV..FALSE.) .AND. (left_write_flag.EQ.1)) THEN
+            !wait until can write
+            !IF (left_write_flag .EQ. 0) THEN
+            !  CALL SHMEM_INT4_WAIT_UNTIL(left_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+            
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_left(chunk, depth, fields)
+
+            left_sent = .TRUE.
+            left_write_flag = 0 
+            mess_to_send = mess_to_send - 1
         ENDIF
-        
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_left(chunk, depth, fields)
+        IF((chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (right_sent.EQV..FALSE.) .AND. (right_write_flag.EQ.1)) THEN
+            !wait until can write
+            !IF (right_write_flag .EQ. 0) THEN
+            !  CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
 
-        left_write_flag = 0 
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-        !wait until can write
-        IF (right_write_flag .EQ. 0) THEN
-          CALL SHMEM_INT4_WAIT_UNTIL(right_write_flag, SHMEM_CMP_EQ, 1)
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_right(chunk, depth, fields)
+
+            right_sent = .TRUE.
+            right_write_flag = 0 
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF((chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) .AND. (bottom_sent.EQV..FALSE.) .AND. (bottom_write_flag.EQ.1) ) THEN
+            !wait until can write
+            !IF (bottom_write_flag .EQ. 0) THEN
+            !  CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
+
+            bottom_sent = .TRUE. 
+            bottom_write_flag = 0
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF( (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) .AND. (top_sent.EQV..FALSE.) .AND. (top_write_flag.EQ.1) )THEN
+            !wait until can write
+            !IF (top_write_flag .EQ. 0) THEN
+            !    CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_top(chunk, depth, fields)
+
+            top_sent = .TRUE.
+            top_write_flag = 0 
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) & 
+                                                                           .AND. (left_top_sent.EQV..FALSE.) .AND. (left_top_write_flag.EQ.1) ) THEN
+            !wait until can write
+            !IF (left_top_write_flag .EQ. 0) THEN
+            !    CALL SHMEM_INT4_WAIT_UNTIL(left_top_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_left_top(chunk, depth, fields)
+
+            left_top_sent = .TRUE. 
+            left_top_write_flag = 0
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) &
+                                                                            .AND. (right_top_sent.EQV..FALSE.) .AND. (right_top_write_flag.EQ.1) ) THEN
+            !wait until can write
+            !IF (right_top_write_flag .EQ. 0) THEN
+            !    CALL SHMEM_INT4_WAIT_UNTIL(right_top_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_right_top(chunk, depth, fields)
+
+            right_top_sent = .TRUE.
+            right_top_write_flag = 0
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) & 
+                                                                            .AND. (right_bottom_sent.EQV..FALSE.) .AND. (right_bottom_write_flag.EQ.1) ) THEN
+            !wait until can write
+            !IF (right_bottom_write_flag .EQ. 0) THEN
+            !    CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_right_bottom(chunk, depth, fields)
+
+            right_bottom_sent = .TRUE.
+            right_bottom_write_flag = 0
+            mess_to_send = mess_to_send - 1
+        ENDIF
+        IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) & 
+                                                                           .AND. (left_bottom_sent.EQV..FALSE.) .AND. (left_bottom_write_flag.EQ.1) ) THEN
+            !wait until can write
+            !IF (left_bottom_write_flag .EQ. 0) THEN
+            !    CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_write_flag, SHMEM_CMP_EQ, 1)
+            !ENDIF
+
+            !call method to write all buffers in this direction 
+            CALL clover_exchange_write_all_buffers_left_bottom(chunk, depth, fields)
+
+            left_bottom_sent = .TRUE.
+            left_bottom_write_flag = 0
+            mess_to_send = mess_to_send - 1
         ENDIF
 
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_right(chunk, depth, fields)
-
-        right_write_flag = 0 
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        !wait until can write
-        IF (bottom_write_flag .EQ. 0) THEN
-          CALL SHMEM_INT4_WAIT_UNTIL(bottom_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_bottom(chunk, depth, fields)
-
-        bottom_write_flag = 0
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        !wait until can write
-        IF (top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_top(chunk, depth, fields)
-
-        top_write_flag = 0 
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        !wait until can write
-        IF (left_top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_left_top(chunk, depth, fields)
-
-        left_top_write_flag = 0
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        !wait until can write
-        IF (right_top_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_top_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_right_top(chunk, depth, fields)
-
-        right_top_write_flag = 0
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        !wait until can write
-        IF (right_bottom_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_right_bottom(chunk, depth, fields)
-
-        right_bottom_write_flag = 0
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        !wait until can write
-        IF (left_bottom_write_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_write_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
-
-        !call method to write all buffers in this direction 
-        CALL clover_exchange_write_all_buffers_left_bottom(chunk, depth, fields)
-
-        left_bottom_write_flag = 0
-    ENDIF
+    ENDDO
 
 
 #ifdef FENCE_NOT_QUIET
