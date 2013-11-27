@@ -576,7 +576,7 @@ SUBROUTINE clover_allocate_buffers(chunk)
         num_neighbours = num_neighbours + 1 
     ENDIF
 
-    WRITE (*,*) "process: ", parallel%task, " num neighbours: ", num_neighbours
+    !WRITE (*,*) "process: ", parallel%task, " num neighbours: ", num_neighbours
 
     !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
     !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
@@ -629,7 +629,7 @@ SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
     right_bottom_sent = .FALSE.
     left_bottom_sent = .FALSE.
 
-    DO WHILE (mess_to_send .EQ. 0)
+    DO WHILE (mess_to_send .GT. 0)
 
         IF ((chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (left_sent.EQV..FALSE.) .AND. (left_write_flag.EQ.1)) THEN
             !wait until can write
@@ -793,72 +793,88 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         !wait for flag to be set
-        IF (left_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (left_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(left_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (left_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_left(chunk, depth, fields)
         left_rcv_flag = 0
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
         !wait for flag to be set
-        IF (right_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (right_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(right_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (right_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_right(chunk, depth, fields)
         right_rcv_flag = 0
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
         !wait for flag to be set
-        IF (bottom_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (bottom_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (bottom_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_bottom(chunk, depth, fields)
         bottom_rcv_flag = 0
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
         !wait for flag to be set
-        IF (top_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (top_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(top_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (top_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_top(chunk, depth, fields)
         top_rcv_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait for flag to be set
-        IF (left_top_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_top_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (left_top_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(left_top_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (left_top_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_left_top(chunk, depth, fields)
         left_top_rcv_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         !wait for flag to be set
-        IF (right_top_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_top_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (right_top_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(right_top_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (right_top_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_right_top(chunk, depth, fields)
         right_top_rcv_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait for flag to be set
-        IF (right_bottom_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (right_bottom_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(right_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (right_bottom_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_right_bottom(chunk, depth, fields)
         right_bottom_rcv_flag = 0
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         !wait for flag to be set
-        IF (left_bottom_rcv_flag .EQ. 0) THEN
-            CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
-        ENDIF
+        !IF (left_bottom_rcv_flag .EQ. 0) THEN
+        !    CALL SHMEM_INT4_WAIT_UNTIL(left_bottom_rcv_flag, SHMEM_CMP_EQ, 1)
+        !ENDIF
+        DO WHILE (left_bottom_rcv_flag .EQ. 0)
+        ENDDO
         !unpack the buffer
         CALL clover_exchange_unpack_all_buffers_left_bottom(chunk, depth, fields)
         left_bottom_rcv_flag = 0
