@@ -815,6 +815,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             left_recv = .TRUE.
             left_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+            CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
         ENDIF
         IF( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (right_recv.EQV..FALSE.) .AND. (right_rcv_flag.EQ.1)) THEN
             !wait for flag to be set
@@ -827,6 +830,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             right_recv = .TRUE.
             right_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+            CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
         ENDIF
         IF( (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) .AND. (bottom_recv.EQV..FALSE.) .AND. (bottom_rcv_flag.EQ.1)) THEN
             !wait for flag to be set
@@ -839,6 +845,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             bottom_recv = .TRUE. 
             bottom_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+            CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
         ENDIF
         IF( (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) .AND. (top_recv.EQV..FALSE.) .AND. (top_rcv_flag.EQ.1) ) THEN
             !wait for flag to be set
@@ -851,6 +860,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             top_recv = .TRUE.
             top_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+            CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
         ENDIF
         IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) &
                                                                            .AND. (left_top_recv.EQV..FALSE.) .AND. (left_top_rcv_flag.EQ.1) ) THEN
@@ -864,6 +876,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             left_top_recv = .TRUE.
             left_top_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
+            CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
         ENDIF
         IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face)  &
                                                                             .AND. (right_top_recv.EQV..FALSE.) .AND. (right_top_rcv_flag.EQ.1) ) THEN
@@ -877,6 +892,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             right_top_recv = .TRUE.
             right_top_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
+            CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
         ENDIF
         IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) & 
                                                                             .AND. (right_bottom_recv.EQV..FALSE.) .AND. (right_bottom_rcv_flag.EQ.1)) THEN
@@ -890,6 +908,9 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             right_bottom_recv = .TRUE.
             right_bottom_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
+            CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
         ENDIF
         IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) &
                                                                            .AND. (left_bottom_recv.EQV..FALSE.) .AND. (left_bottom_rcv_flag.EQ.1)) THEN
@@ -903,43 +924,12 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
             left_bottom_recv = .TRUE.
             left_bottom_rcv_flag = 0
             mess_to_recv = mess_to_recv - 1
+
+            receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
+            CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
         ENDIF
 
     ENDDO
-
-
-    IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
-        CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
-        CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
-        CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
-    ENDIF
-    IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-        receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
-        CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_top))%task
-        CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_top))%task
-        CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_right_bottom))%task
-        CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
-    ENDIF
-    IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
-        receiver = chunks(chunks(chunk)%chunk_neighbours(chunk_left_bottom))%task
-        CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
-    ENDIF
 
 END SUBROUTINE clover_exchange_receive_async
 
