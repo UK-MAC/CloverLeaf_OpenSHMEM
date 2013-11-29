@@ -2096,7 +2096,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_left(chunk, depth, fields)
         CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_left_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_left_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2150,7 +2150,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_right(chunk, depth, fields)
         CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_right_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_right_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2205,7 +2205,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_bottom(chunk, depth, fields)
         CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2259,7 +2259,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_top(chunk, depth, fields)
         CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_top_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_top_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_top_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_top_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2313,7 +2313,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_left_top(chunk, depth, fields)
         CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_top_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_top_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_left_top_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_left_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_top_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2367,7 +2367,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_right_top(chunk, depth, fields)
         CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_top_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_top_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_right_top_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_right_top_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_top_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2421,7 +2421,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_right_bottom(chunk, depth, fields)
         CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_right_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_right_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_right_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_right_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_right_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
@@ -2475,7 +2475,7 @@ SUBROUTINE clover_exchange_unpack_all_buffers_left_bottom(chunk, depth, fields)
         CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel1_left_bottom_rcv_buffer, chunks(chunk)%field%xvel1)
     ENDIF
     IF(fields(FIELD_YVEL0).EQ.1) THEN
-        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, xvel0_left_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
+        CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel0_left_bottom_rcv_buffer, chunks(chunk)%field%yvel0)
     ENDIF
     IF(fields(FIELD_YVEL1).EQ.1) THEN
         CALL unpack_left_bottom_buffer_seq(chunk, depth, VERTEX_DATA, yvel1_left_bottom_rcv_buffer, chunks(chunk)%field%yvel1)
