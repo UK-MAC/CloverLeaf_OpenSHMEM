@@ -223,10 +223,10 @@ MODULE definitions_module
     !REAL(KIND=8) :: vol_flux_y(-1,-1)
     !REAL(KIND=8) :: mass_flux_y(-1,-1)
 
-    INTEGER, PARAMETER :: xmaxplustwo   = 122
-    INTEGER, PARAMETER :: xmaxplusthree = 123
-    INTEGER, PARAMETER :: ymaxplustwo   = 82
-    INTEGER, PARAMETER :: ymaxplsuthree = 83
+    INTEGER, PARAMETER :: xmaxplustwo   = 82
+    INTEGER, PARAMETER :: xmaxplusthree = 83
+    INTEGER, PARAMETER :: ymaxplustwo   = 62
+    INTEGER, PARAMETER :: ymaxplsuthree = 63
 
     REAL(KIND=8) :: density0(-1:xmaxplustwo,-1:ymaxplustwo)
     REAL(KIND=8) :: density1(-1:xmaxplustwo,-1:ymaxplustwo)
