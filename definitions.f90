@@ -223,21 +223,26 @@ MODULE definitions_module
     !REAL(KIND=8) :: vol_flux_y(-1,-1)
     !REAL(KIND=8) :: mass_flux_y(-1,-1)
 
-    REAL(KIND=8) :: density0(-1:122,-1:130)
-    REAL(KIND=8) :: density1(-1:122,-1:130)
-    REAL(KIND=8) :: energy0(-1:122,-1:130)
-    REAL(KIND=8) :: energy1(-1:122,-1:130)
-    REAL(KIND=8) :: pressure(-1:122,-1:130)
-    REAL(KIND=8) :: viscosity(-1:122,-1:130)
-    REAL(KIND=8) :: soundspeed(-1:122,-1:130)
-    REAL(KIND=8) :: xvel0(-1:123,-1:131)
-    REAL(KIND=8) :: xvel1(-1:123,-1:131)
-    REAL(KIND=8) :: yvel0(-1:123,-1:131)
-    REAL(KIND=8) :: yvel1(-1:123,-1:131)
-    REAL(KIND=8) :: vol_flux_x(-1:123,-1:130)
-    REAL(KIND=8) :: mass_flux_x(-1:123,-1:130)
-    REAL(KIND=8) :: vol_flux_y(-1:122,-1:131)
-    REAL(KIND=8) :: mass_flux_y(-1:122,-1:131)
+    INTEGER, PARAMETER :: xmaxplustwo   = 482
+    INTEGER, PARAMETER :: xmaxplusthree = 483
+    INTEGER, PARAMETER :: ymaxplustwo   = 322
+    INTEGER, PARAMETER :: ymaxplsuthree = 323
+
+    REAL(KIND=8) :: density0(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: density1(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: energy0(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: energy1(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: pressure(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: viscosity(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: soundspeed(-1:xmaxplustwo,-1:ymaxplustwo)
+    REAL(KIND=8) :: xvel0(-1:xmaxplusthree,-1:ymaxplsuthree)
+    REAL(KIND=8) :: xvel1(-1:xmaxplusthree,-1:ymaxplsuthree)
+    REAL(KIND=8) :: yvel0(-1:xmaxplusthree,-1:ymaxplsuthree)
+    REAL(KIND=8) :: yvel1(-1:xmaxplusthree,-1:ymaxplsuthree)
+    REAL(KIND=8) :: vol_flux_x(-1:xmaxplusthree,-1:ymaxplustwo)
+    REAL(KIND=8) :: mass_flux_x(-1:xmaxplusthree,-1:ymaxplustwo)
+    REAL(KIND=8) :: vol_flux_y(-1:xmaxplustwo,-1:ymaxplsuthree)
+    REAL(KIND=8) :: mass_flux_y(-1:xmaxplustwo,-1:ymaxplsuthree)
 
     POINTER(pDensity0,   density0)
     POINTER(pDensity1,   density1)
