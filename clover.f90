@@ -33,7 +33,7 @@ MODULE clover_module
 
   USE data_module
   USE definitions_module
-  USE iso_c_binding
+  !USE iso_c_binding
   USE pack_kernel_module
 
   IMPLICIT NONE
@@ -82,8 +82,6 @@ SUBROUTINE clover_abort
 END SUBROUTINE clover_abort
 
 SUBROUTINE clover_finalize
-
-  INTEGER :: err
 
   CLOSE(g_out)
   CALL FLUSH(0)
@@ -546,9 +544,7 @@ SUBROUTINE clover_allocate_buffers(chunk)
     CALL SHPALLOC(massflux_y_plbs, diag_buff_size, err, 1)
     CALL SHPALLOC(massflux_y_prbs, diag_buff_size, err, 1)
 
-
-
-    WRITE(*,*) "Successfully shpalloc'd the comms buffers"
+    !WRITE(*,*) "Successfully shpalloc'd the comms buffers"
 
     num_neighbours = 0
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
@@ -576,24 +572,6 @@ SUBROUTINE clover_allocate_buffers(chunk)
         num_neighbours = num_neighbours + 1 
     ENDIF
 
-    !WRITE (*,*) "process: ", parallel%task, " num neighbours: ", num_neighbours
-
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%left_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%right_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%right_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%bottom_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%bottom_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%top_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%top_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
   ENDIF
 
 END SUBROUTINE clover_allocate_buffers
