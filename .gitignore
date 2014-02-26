@@ -1,1 +1,9 @@
 *.lst
+*.o
+*.mod
+*.lst
+*.cub
+*.ptx
+*genmod*
+*.i
+clover_leaf

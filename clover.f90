@@ -33,7 +33,7 @@ MODULE clover_module
 
   USE data_module
   USE definitions_module
-  USE iso_c_binding
+  !USE iso_c_binding
 
   IMPLICIT NONE
 
@@ -73,8 +73,6 @@ SUBROUTINE clover_abort
 END SUBROUTINE clover_abort
 
 SUBROUTINE clover_finalize
-
-  INTEGER :: err
 
   CLOSE(g_out)
   CALL FLUSH(0)
@@ -240,22 +238,6 @@ SUBROUTINE clover_allocate_buffers(chunk)
     CALL SHPALLOC( pts, buffer_size_x, err, 0)
     CALL SHPALLOC( ptr, buffer_size_x, err, 0)
 
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%left_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%left_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%right_snd_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !  ALLOCATE(chunks(chunk)%right_rcv_buffer(2*(chunks(chunk)%field%y_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%bottom_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%bottom_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
-    !!IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-    !  ALLOCATE(chunks(chunk)%top_snd_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !  ALLOCATE(chunks(chunk)%top_rcv_buffer(2*(chunks(chunk)%field%x_max+5)))
-    !!ENDIF
   ENDIF
 
 END SUBROUTINE clover_allocate_buffers
@@ -542,8 +524,8 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                      chunks(chunk)%field%y_min,chunks(chunk)%field%y_max, &
                                      chunks(chunk)%chunk_neighbours(chunk_left),          &
                                      chunks(chunk)%chunk_neighbours(chunk_right),         &
-                                     external_face,size,                                  &
-                                     x_inc,y_inc,depth,                                   &
+                                     external_face,                                       &
+                                     x_inc,y_inc,depth,size,                              &
                                      field,left_snd_buffer,right_snd_buffer)
     ENDIF
 
@@ -605,7 +587,7 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
                                      chunks(chunk)%chunk_neighbours(chunk_bottom),        &
                                      chunks(chunk)%chunk_neighbours(chunk_top),           &
                                      external_face,                                       &
-                                     x_inc,y_inc,depth,                                   &
+                                     x_inc,y_inc,depth,size,                              &
                                      field,bottom_snd_buffer,top_snd_buffer)
     ENDIF
 
