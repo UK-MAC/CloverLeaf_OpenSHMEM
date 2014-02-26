@@ -88,7 +88,7 @@ SUBROUTINE viscosity_kernel_real(j_start,j_end,k_start,k_end,x_min,x_max,y_min,y
     INTEGER       :: j,k
     INTEGER       :: j_start,j_end,k_start,k_end
     REAL(KIND=8)  :: ugrad,vgrad,grad2,pgradx,pgrady,pgradx2,pgrady2,grad     &
-                    ,ygrad,pgrad,xgrad,div,strain2,limiter
+                    ,ygrad,pgrad,xgrad,div,strain2,limiter,dirx,diry
 
     DO k=k_start,k_end
       DO j=j_start,j_end
@@ -113,9 +113,13 @@ SUBROUTINE viscosity_kernel_real(j_start,j_end,k_start,k_end,x_min,x_max,y_min,y
         IF ((limiter.GT.0.0).OR.(div.GE.0.0))THEN
           viscosity(j,k) = 0.0
         ELSE
-          pgradx = SIGN(MAX(1.0e-16_8,ABS(pgradx)),pgradx)
-          pgrady = SIGN(MAX(1.0e-16_8,ABS(pgrady)),pgrady)
-          pgrad = SQRT(pgradx*pgradx+pgrady*pgrady)
+          dirx=1.0_8
+          IF(pgradx.LT.0.0) dirx=-1.0_8
+          pgradx = dirx*MAX(1.0e-16_8,ABS(pgradx))
+          diry=1.0_8
+          IF(pgradx.LT.0.0) diry=-1.0_8
+          pgrady = diry*MAX(1.0e-16_8,ABS(pgrady))
+          pgrad = SQRT(pgradx**2+pgrady**2)
           xgrad = ABS(celldx(j)*pgrad/pgradx)
           ygrad = ABS(celldy(k)*pgrad/pgrady)
           grad  = MIN(xgrad,ygrad)
