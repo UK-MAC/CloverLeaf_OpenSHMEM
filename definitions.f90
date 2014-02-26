@@ -179,52 +179,48 @@ MODULE definitions_module
 
   END TYPE chunk_type
 
-    !REAL(KIND=8),    DIMENSION(1,1) :: density0,density1
-    !REAL(KIND=8),    DIMENSION(1,1) :: energy0,energy1
-    !REAL(KIND=8),    DIMENSION(1,1) :: pressure
-    !REAL(KIND=8),    DIMENSION(1,1) :: viscosity
-    !REAL(KIND=8),    DIMENSION(1,1) :: soundspeed
-    !REAL(KIND=8),    DIMENSION(1,1) :: xvel0,xvel1
-    !REAL(KIND=8),    DIMENSION(1,1) :: yvel0,yvel1
-    !REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_x,mass_flux_x
-    !REAL(KIND=8),    DIMENSION(1,1) :: vol_flux_y,mass_flux_y
+    !15360x15360 problem, 2048 node case on archer
+    !INTEGER, PARAMETER :: xmaxplustwo   = 82
+    !INTEGER, PARAMETER :: xmaxplusthree = 83
+    !INTEGER, PARAMETER :: ymaxplustwo   = 62
+    !INTEGER, PARAMETER :: ymaxplsuthree = 63
 
-    !REAL(KIND=8) :: density0(-1:482,-1:962)
-    !REAL(KIND=8) :: density1(-1:482,-1:962)
-    !REAL(KIND=8) :: energy0(-1:482,-1:962)
-    !REAL(KIND=8) :: energy1(-1:482,-1:962)
-    !REAL(KIND=8) :: pressure(-1:482,-1:962)
-    !REAL(KIND=8) :: viscosity(-1:482,-1:962)
-    !REAL(KIND=8) :: soundspeed(-1:482,-1:962)
-    !REAL(KIND=8) :: xvel0(-1:483,-1:963)
-    !REAL(KIND=8) :: xvel1(-1:483,-1:963)
-    !REAL(KIND=8) :: yvel0(-1:483,-1:963)
-    !REAL(KIND=8) :: yvel1(-1:483,-1:963)
-    !REAL(KIND=8) :: vol_flux_x(-1:483,-1:962)
-    !REAL(KIND=8) :: mass_flux_x(-1:483,-1:962)
-    !REAL(KIND=8) :: vol_flux_y(-1:482,-1:963)
-    !REAL(KIND=8) :: mass_flux_y(-1:482,-1:963)
+    !!15360x15360 problem,1024 node case on archer
+    !INTEGER, PARAMETER :: xmaxplustwo   = 122
+    !INTEGER, PARAMETER :: xmaxplusthree = 123
+    !INTEGER, PARAMETER :: ymaxplustwo   = 82
+    !INTEGER, PARAMETER :: ymaxplsuthree = 83
 
-    !REAL(KIND=8) :: density0(-1,-1)
-    !REAL(KIND=8) :: density1(-1,-1)
-    !REAL(KIND=8) :: energy0(-1,-1)
-    !REAL(KIND=8) :: energy1(-1,-1)
-    !REAL(KIND=8) :: pressure(-1,-1)
-    !REAL(KIND=8) :: viscosity(-1,-1)
-    !REAL(KIND=8) :: soundspeed(-1,-1)
-    !REAL(KIND=8) :: xvel0(-1,-1)
-    !REAL(KIND=8) :: xvel1(-1,-1)
-    !REAL(KIND=8) :: yvel0(-1,-1)
-    !REAL(KIND=8) :: yvel1(-1,-1)
-    !REAL(KIND=8) :: vol_flux_x(-1,-1)
-    !REAL(KIND=8) :: mass_flux_x(-1,-1)
-    !REAL(KIND=8) :: vol_flux_y(-1,-1)
-    !REAL(KIND=8) :: mass_flux_y(-1,-1)
+    !!15360x15360 problem,512 node case on archer
+    !INTEGER, PARAMETER :: xmaxplustwo   = 162
+    !INTEGER, PARAMETER :: xmaxplusthree = 163
+    !INTEGER, PARAMETER :: ymaxplustwo   = 122
+    !INTEGER, PARAMETER :: ymaxplsuthree = 123
 
-    INTEGER, PARAMETER :: xmaxplustwo   = 82
-    INTEGER, PARAMETER :: xmaxplusthree = 83
+    !!15360x15360 problem,256 node case on archer 
+    !INTEGER, PARAMETER :: xmaxplustwo   = 242
+    !INTEGER, PARAMETER :: xmaxplusthree = 243
+    !INTEGER, PARAMETER :: ymaxplustwo   = 162
+    !INTEGER, PARAMETER :: ymaxplsuthree = 163
+
+    !!15360x15360 problem,128 node case on archer
+    !INTEGER, PARAMETER :: xmaxplustwo   = 322
+    !INTEGER, PARAMETER :: xmaxplusthree = 323
+    !INTEGER, PARAMETER :: ymaxplustwo   = 242
+    !INTEGER, PARAMETER :: ymaxplsuthree = 243
+
+    !!15360x15360 problem,64 node case on archer 
+    !INTEGER, PARAMETER :: xmaxplustwo   = 482
+    !INTEGER, PARAMETER :: xmaxplusthree = 483
+    !INTEGER, PARAMETER :: ymaxplustwo   = 322
+    !INTEGER, PARAMETER :: ymaxplsuthree = 323
+
+    !960x960 problem, 16 nodes on swan = 256 (16x16) processes
+    INTEGER, PARAMETER :: xmaxplustwo   = 62
+    INTEGER, PARAMETER :: xmaxplusthree = 63
     INTEGER, PARAMETER :: ymaxplustwo   = 62
     INTEGER, PARAMETER :: ymaxplsuthree = 63
+
 
     REAL(KIND=8) :: density0(-1:xmaxplustwo,-1:ymaxplustwo)
     REAL(KIND=8) :: density1(-1:xmaxplustwo,-1:ymaxplustwo)
