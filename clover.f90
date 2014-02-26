@@ -33,7 +33,7 @@ MODULE clover_module
     
     USE data_module
     USE definitions_module
-    USE iso_c_binding
+    !USE iso_c_binding
 
     IMPLICIT NONE
 
@@ -77,8 +77,6 @@ SUBROUTINE clover_abort
 END SUBROUTINE clover_abort
 
 SUBROUTINE clover_finalize
-
-  INTEGER :: err
 
   CLOSE(g_out)
   CALL FLUSH(0)
