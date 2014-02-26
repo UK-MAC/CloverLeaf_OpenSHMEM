@@ -544,9 +544,7 @@ SUBROUTINE clover_allocate_buffers(chunk)
     CALL SHPALLOC(massflux_y_plbs, diag_buff_size, err, 1)
     CALL SHPALLOC(massflux_y_prbs, diag_buff_size, err, 1)
 
-
-
-    WRITE(*,*) "Successfully shpalloc'd the comms buffers"
+    !WRITE(*,*) "Successfully shpalloc'd the comms buffers"
 
   ENDIF
 
