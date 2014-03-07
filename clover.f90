@@ -192,33 +192,40 @@ SUBROUTINE clover_decompose(x_cells,y_cells,left,right,bottom,top)
 
   ! Set up chunk mesh ranges and chunk connectivity
 
-  add_x_prev=0
-  add_y_prev=0
-  chunk=1
-  DO cy=1,chunk_y
-    DO cx=1,chunk_x
-      add_x=0
-      add_y=0
-      IF(cx.LE.mod_x)add_x=1
-      IF(cy.LE.mod_y)add_y=1
-      left(chunk)=(cx-1)*delta_x+1+add_x_prev
-      right(chunk)=left(chunk)+delta_x-1+add_x
-      bottom(chunk)=(cy-1)*delta_y+1+add_y_prev
-      top(chunk)=bottom(chunk)+delta_y-1+add_y
-      chunks(chunk)%chunk_neighbours(chunk_left)=chunk_x*(cy-1)+cx-1
-      chunks(chunk)%chunk_neighbours(chunk_right)=chunk_x*(cy-1)+cx+1
-      chunks(chunk)%chunk_neighbours(chunk_bottom)=chunk_x*(cy-2)+cx
-      chunks(chunk)%chunk_neighbours(chunk_top)=chunk_x*(cy)+cx
-      IF(cx.EQ.1)chunks(chunk)%chunk_neighbours(chunk_left)=external_face
-      IF(cx.EQ.chunk_x)chunks(chunk)%chunk_neighbours(chunk_right)=external_face
-      IF(cy.EQ.1)chunks(chunk)%chunk_neighbours(chunk_bottom)=external_face
-      IF(cy.EQ.chunk_y)chunks(chunk)%chunk_neighbours(chunk_top)=external_face
-      IF(cx.LE.mod_x)add_x_prev=add_x_prev+1
-      chunk=chunk+1
-    ENDDO
     add_x_prev=0
-    IF(cy.LE.mod_y)add_y_prev=add_y_prev+1
-  ENDDO
+    add_y_prev=0
+    chunk=1
+    DO cy=1,chunk_y
+        DO cx=1,chunk_x
+            add_x=0
+            add_y=0
+            IF(cx.LE.mod_x)add_x=1
+            IF(cy.LE.mod_y)add_y=1
+
+            IF (chunk .EQ. parallel%task+1) THEN
+
+                left(1)   = (cx-1)*delta_x+1+add_x_prev
+                right(1)  = left(1)+delta_x-1+add_x
+                bottom(1) = (cy-1)*delta_y+1+add_y_prev
+                top(1)    = bottom(1)+delta_y-1+add_y
+
+                chunks(1)%chunk_neighbours(chunk_left)=chunk_x*(cy-1)+cx-1
+                chunks(1)%chunk_neighbours(chunk_right)=chunk_x*(cy-1)+cx+1
+                chunks(1)%chunk_neighbours(chunk_bottom)=chunk_x*(cy-2)+cx
+                chunks(1)%chunk_neighbours(chunk_top)=chunk_x*(cy)+cx
+
+                IF(cx.EQ.1)       chunks(1)%chunk_neighbours(chunk_left)=external_face
+                IF(cx.EQ.chunk_x) chunks(1)%chunk_neighbours(chunk_right)=external_face
+                IF(cy.EQ.1)       chunks(1)%chunk_neighbours(chunk_bottom)=external_face
+                IF(cy.EQ.chunk_y) chunks(1)%chunk_neighbours(chunk_top)=external_face
+            ENDIF
+
+            IF(cx.LE.mod_x)add_x_prev=add_x_prev+1
+            chunk=chunk+1
+        ENDDO
+        add_x_prev=0
+        IF(cy.LE.mod_y)add_y_prev=add_y_prev+1
+    ENDDO
 
   num_chunks_x = chunk_x
   num_chunks_y = chunk_y
@@ -236,83 +243,85 @@ SUBROUTINE clover_exchange(fields,depth)
 
   IMPLICIT NONE
 
-  INTEGER      :: fields(:),depth
-    
+  INTEGER      :: fields(:),depth,location_of_tasks_chunk
+
   ! Assuming 1 patch per task, this will be changed
   ! Also, not packing all fields for each communication, doing one at a time
 
+    location_of_tasks_chunk = 1
+
   IF(fields(FIELD_DENSITY0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,density0,      &
+    CALL clover_exchange_message(location_of_tasks_chunk,density0,      &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_DENSITY1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,density1,      &
+    CALL clover_exchange_message(location_of_tasks_chunk,density1,      &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_ENERGY0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,energy0,       &
+    CALL clover_exchange_message(location_of_tasks_chunk,energy0,       &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_ENERGY1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,energy1,       &
+    CALL clover_exchange_message(location_of_tasks_chunk,energy1,       &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_PRESSURE).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,pressure,      &
+    CALL clover_exchange_message(location_of_tasks_chunk,pressure,      &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_VISCOSITY).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,viscosity,     &
+    CALL clover_exchange_message(location_of_tasks_chunk,viscosity,     &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_SOUNDSPEED).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,soundspeed,    &
+    CALL clover_exchange_message(location_of_tasks_chunk,soundspeed,    &
                                  depth,CELL_DATA)
   ENDIF
 
   IF(fields(FIELD_XVEL0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,xvel0,         &
+    CALL clover_exchange_message(location_of_tasks_chunk,xvel0,         &
                                  depth,VERTEX_DATA)
   ENDIF
 
   IF(fields(FIELD_XVEL1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,xvel1,         &
+    CALL clover_exchange_message(location_of_tasks_chunk,xvel1,         &
                                  depth,VERTEX_DATA)
   ENDIF
 
   IF(fields(FIELD_YVEL0).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,yvel0,         &
+    CALL clover_exchange_message(location_of_tasks_chunk,yvel0,         &
                                  depth,VERTEX_DATA)
   ENDIF
 
   IF(fields(FIELD_YVEL1).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,yvel1,         &
+    CALL clover_exchange_message(location_of_tasks_chunk,yvel1,         &
                                  depth,VERTEX_DATA)
   ENDIF
 
   IF(fields(FIELD_VOL_FLUX_X).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,vol_flux_x,    &
+    CALL clover_exchange_message(location_of_tasks_chunk,vol_flux_x,    &
                                  depth,X_FACE_DATA)
   ENDIF
 
   IF(fields(FIELD_VOL_FLUX_Y).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,vol_flux_y,    &
+    CALL clover_exchange_message(location_of_tasks_chunk,vol_flux_y,    &
                                  depth,Y_FACE_DATA)
   ENDIF
 
   IF(fields(FIELD_MASS_FLUX_X).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,mass_flux_x,   &
+    CALL clover_exchange_message(location_of_tasks_chunk,mass_flux_x,   &
                                  depth,X_FACE_DATA)
   ENDIF
 
   IF(fields(FIELD_MASS_FLUX_Y).EQ.1) THEN
-    CALL clover_exchange_message(parallel%task+1,mass_flux_y,   &
+    CALL clover_exchange_message(location_of_tasks_chunk,mass_flux_y,   &
                                  depth,Y_FACE_DATA)
   ENDIF
 
@@ -326,7 +335,7 @@ SUBROUTINE clover_exchange_left_put(depth, x_inc, y_inc, array_width, num_elemen
     INTEGER :: depth, x_inc, y_inc, array_width, num_elements, receiver, chunk
     REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
 
-    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+    receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
     IF (depth .EQ. 1) THEN
 
@@ -375,7 +384,7 @@ SUBROUTINE clover_exchange_right_put(depth, x_inc, y_inc, array_width, num_eleme
     INTEGER :: depth, x_inc, y_inc, array_width, num_elements, receiver, chunk
     REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
 
-    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+    receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
     IF (depth .EQ. 1) THEN
 
@@ -422,7 +431,7 @@ SUBROUTINE clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
     INTEGER :: depth, x_inc, y_inc, chunk, size, receiver 
     REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
 
-    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+    receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
     CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
                         field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
@@ -437,7 +446,7 @@ SUBROUTINE clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
     INTEGER :: depth, x_inc, y_inc, chunk, size, receiver 
     REAL(KIND=8) :: field(-1:,-1:) ! This seems to work for any type of mesh data
 
-    receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+    receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
     CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
                         field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
@@ -497,13 +506,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
         !tell left and right neighbours that this pe is ready to receive data
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
             CALL SHMEM_PUT4_NB(right_pe_ready, 0, 1, receiver) 
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
             CALL SHMEM_PUT4_NB(left_pe_ready, 0, 1, receiver)
         ENDIF
@@ -561,13 +570,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
 
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_left))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
             CALL SHMEM_PUT4_NB(right_pe_written, 0, 1, receiver)
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_right))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
             CALL SHMEM_PUT4_NB(left_pe_written, 0, 1, receiver)
         ENDIF
@@ -592,13 +601,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
         !tell up and down neighbours that this pe is ready to receive 
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
             CALL SHMEM_PUT4_NB(top_pe_ready, 0, 1, receiver)
         ENDIF
     
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
             CALL SHMEM_PUT4_NB(bottom_pe_ready, 0, 1, receiver)
         ENDIF
@@ -650,13 +659,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
         ! Send/receive the data
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_bottom))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
             CALL SHMEM_PUT4_NB(top_pe_written, 0, 1, receiver)
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
-            receiver=chunks(chunks(chunk)%chunk_neighbours(chunk_top))%task
+            receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
             CALL SHMEM_PUT4_NB(bottom_pe_written, 0, 1, receiver)
         ENDIF
