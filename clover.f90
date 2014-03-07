@@ -644,9 +644,6 @@ SUBROUTINE clover_exchange(fields,depth)
                                  depth,Y_FACE_DATA)
   ENDIF
 
-  CALL SHMEM_BARRIER_ALL()
-
-
 END SUBROUTINE clover_exchange
 
 SUBROUTINE clover_exchange_message(chunk,field,                            &
