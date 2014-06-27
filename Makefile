@@ -71,6 +71,9 @@ SHMEM_PATHSCALE =
 SHMEM_XL =
 SHMEM_FINALIZE=$(SHMEM_$(COMPILER))
 
+# SHMEM_INCLUDE = -I
+# SHMEM_LIB = -L -lsma -lmpi
+
 OMP_INTEL     = -openmp
 OMP_SUN       = -xopenmp=parallel -vpara
 OMP_GNU       = -fopenmp
@@ -80,7 +83,7 @@ OMP_PATHSCALE = -mp
 OMP_XL        = -qsmp=omp -qthreaded
 OMP=$(OMP_$(COMPILER))
 
-FLAGS_INTEL     = -O3 -no-prec-div
+FLAGS_INTEL     = -O3 -no-prec-div -fpp
 FLAGS_SUN       = -fast -xipo=2 -Xlistv4
 FLAGS_GNU       = -O3 -march=native -funroll-loops
 FLAGS_CRAY      = -em -ra -h acc_model=fast_addr:no_deep_copy:auto_async_all -eZ
@@ -98,7 +101,7 @@ CFLAGS_XL       = -O5 -qipa=partition=large -g -qfullpath -Q -qlistopt -qattr=fu
 CFLAGS_          = -O3
 
 ifdef DEBUG
-  FLAGS_INTEL     = -O0 -g -debug all -check all -traceback -check noarg_temp_created
+  FLAGS_INTEL     = -O0 -g -debug all -check all -traceback -check noarg_temp_created -fpp
   FLAGS_SUN       = -g -xopenmp=noopt -stackvar -u -fpover=yes -C -ftrap=common
   FLAGS_GNU       = -O0 -g -O -Wall -Wextra -fbounds-check
   FLAGS_CRAY      = -O0 -g -em -eD -eZ
@@ -126,7 +129,7 @@ ifdef IEEE
   I3E=$(I3E_$(COMPILER))
 endif
 
-FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) $(SHMEM_FINALIZE)
+FLAGS=$(FLAGS_$(COMPILER)) $(OMP) $(I3E) $(OPTIONS) $(SHMEM_FINALIZE) $(SHMEM_INCLUDE) $(SHMEM_LIB)
 CFLAGS=$(CFLAGS_$(COMPILER)) $(OMP) $(I3E) $(C_OPTIONS) -c
 MPI_COMPILER=mpif90
 C_MPI_COMPILER=mpicc
