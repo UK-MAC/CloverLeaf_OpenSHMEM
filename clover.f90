@@ -546,14 +546,14 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
       receiver=chunks(chunk)%chunk_neighbours(chunk_left)-1
 
-      CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+      CALL SHMEM_PUT64(right_rcv_buffer, left_snd_buffer, size, receiver)
 
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
       receiver=chunks(chunk)%chunk_neighbours(chunk_right)-1
 
-      CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+      CALL SHMEM_PUT64(left_rcv_buffer, right_snd_buffer, size, receiver)
 
     ENDIF
   ENDIF
@@ -608,14 +608,14 @@ SUBROUTINE clover_exchange_message(chunk,field,                            &
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
       receiver=chunks(chunk)%chunk_neighbours(chunk_bottom)-1
 
-      CALL SHMEM_PUT64_NB(top_rcv_buffer, bottom_snd_buffer, size, receiver)
+      CALL SHMEM_PUT64(top_rcv_buffer, bottom_snd_buffer, size, receiver)
 
     ENDIF
 
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
       receiver=chunks(chunk)%chunk_neighbours(chunk_top)-1
 
-      CALL SHMEM_PUT64_NB(bottom_rcv_buffer, top_snd_buffer, size, receiver)
+      CALL SHMEM_PUT64(bottom_rcv_buffer, top_snd_buffer, size, receiver)
 
     ENDIF
 
