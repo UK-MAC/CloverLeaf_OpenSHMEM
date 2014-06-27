@@ -68,7 +68,9 @@ END SUBROUTINE clover_barrier
 
 SUBROUTINE clover_abort
 
+#ifdef ENABLE_SHMEM_FINALIZE
   CALL SHMEM_FINALIZE
+#endif
 
 END SUBROUTINE clover_abort
 
@@ -79,7 +81,9 @@ SUBROUTINE clover_finalize
   CALL FLUSH(6)
   CALL FLUSH(g_out)
 
+#ifdef ENABLE_SHMEM_FINALIZE
   CALL SHMEM_FINALIZE
+#endif
 
 END SUBROUTINE clover_finalize
 
