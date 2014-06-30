@@ -100,6 +100,7 @@ MODULE parse_module
 
   USE data_module
   USE report_module
+    USE clover_module
 
   IMPLICIT NONE
 
@@ -278,7 +279,7 @@ FUNCTION parse_getline(dummy)
 
   FUNCTION parse_getival(word)
 
-    USE clover_module
+    !USE clover_module
 
     CHARACTER(LEN=*)  :: word
     INTEGER         :: temp,parse_getival
@@ -298,7 +299,7 @@ FUNCTION parse_getline(dummy)
 
   FUNCTION parse_getlval(word)
 
-    USE clover_module
+    !USE clover_module
 
     CHARACTER(LEN=*)  :: word
     LOGICAL :: temp,parse_getlval
@@ -331,7 +332,7 @@ FUNCTION parse_getline(dummy)
 
   FUNCTION parse_getrval(word)
 
-    USE clover_module
+    !USE clover_module
 
     CHARACTER(LEN=*) :: word
     REAL(KIND=8)   :: temp,parse_getrval
