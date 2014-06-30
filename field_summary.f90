@@ -32,7 +32,6 @@ SUBROUTINE field_summary()
 
   IMPLICIT NONE
 
-  REAL(KIND=8) :: vol,mass,ie,ke,press
   REAL(KIND=8) :: qa_diff
 
 
