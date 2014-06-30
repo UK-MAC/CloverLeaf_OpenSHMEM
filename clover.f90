@@ -41,32 +41,23 @@ MODULE clover_module
 
     INTEGER, PARAMETER :: NR = 1
 
-    REAL(KIND=8) :: sum_total, sum_value
-    REAL(KIND=8) :: min_value, min_final
-    REAL(KIND=8) :: max_value, max_final
-    INTEGER      :: error_value, error_final
+    REAL(KIND=8) :: pri_input, pri_output
+    REAL(KIND=8) :: sec_input, sec_output
 
-    REAL(KIND=8) :: pWrk_sum(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-    INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
-    DATA pSync_sum /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
+    REAL(KIND=8) :: pWrk_pri(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_pri(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_pri /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
-    REAL(KIND=8) :: pWrk_min(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-    INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
-    DATA pSync_min /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
+    REAL(KIND=8) :: pWrk_sec(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pSync_sec(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_sec /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
-    REAL(KIND=8) :: pWrk_max(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-    INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
-    DATA pSync_max /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
+    LOGICAL :: use_primary 
 
-    INTEGER :: pWrk_error(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
-    INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
-    DATA pSync_error /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    COMMON /COLL/ pWrk_sum, pSync_sum, pWrk_min, pSync_min, pWrk_max, pSync_max, &
-                  sum_total, sum_value, min_value, min_final, max_value, max_final, &
-                  error_value, error_final
+    COMMON /COLL/ pri_input, pri_output, sec_input, sec_output
 
 CONTAINS
 
@@ -120,6 +111,8 @@ SUBROUTINE clover_init_comms
 
   parallel%boss_task=0
   parallel%max_task=size
+
+    use_primary = .TRUE.
 
 END SUBROUTINE clover_init_comms
 
@@ -659,75 +652,96 @@ END SUBROUTINE clover_exchange_message
 
 SUBROUTINE clover_sum(value)
 
-  ! Only sums to the master
+    IMPLICIT NONE
 
-  IMPLICIT NONE
+    REAL(KIND=8) :: value
 
-  REAL(KIND=8) :: value
-
-  REAL(KIND=8) :: total
-
-  sum_value=value
-  sum_total=0
-
-  CALL SHMEM_REAL8_SUM_TO_ALL(sum_total,sum_value,1,0,0,parallel%max_task,pWrk_sum,pSync_sum)
-
-  value=sum_total
+    IF (use_primary) THEN
+        pri_input = value
+        pri_output = 0
+        CALL SHMEM_REAL8_SUM_TO_ALL(pri_output,pri_input,1,0,0,parallel%max_task,pWrk_pri,pSync_pri)
+        value = pri_output
+    ELSE
+        sec_input = value
+        sec_output = 0
+        CALL SHMEM_REAL8_SUM_TO_ALL(sec_output,sec_input,1,0,0,parallel%max_task,pWrk_sec,pSync_sec)
+        value = sec_output
+    ENDIF
+    
+    use_primary = .NOT. use_primary
 
 END SUBROUTINE clover_sum
 
 SUBROUTINE clover_min(value)
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  REAL(KIND=8) :: value
+    REAL(KIND=8) :: value
 
-  min_value = value
+    IF (use_primary) THEN
+        pri_input = value
+        CALL SHMEM_REAL8_MIN_TO_ALL(pri_output, pri_input, 1, 0, 0, parallel%max_task, pWrk_pri, pSync_pri)
+        value = pri_output  
+    ELSE
+        sec_input = value
+        CALL SHMEM_REAL8_MIN_TO_ALL(sec_output, sec_input, 1, 0, 0, parallel%max_task, pWrk_sec, pSync_sec)
+        value = sec_output  
+    ENDIF
 
-  CALL SHMEM_REAL8_MIN_TO_ALL(min_final, min_value, 1, 0, 0, parallel%max_task, pWrk_min, pSync_min)
-
-  value = min_final
+    use_primary = .NOT. use_primary
 
 END SUBROUTINE clover_min
 
 SUBROUTINE clover_max(value)
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  REAL(KIND=8) :: value
+    REAL(KIND=8) :: value
 
-  max_value = value
+    IF (use_primary) THEN
+        pri_input = value 
+        CALL SHMEM_REAL8_MAX_TO_ALL(pri_output, pri_input, 1, 0, 0, parallel%max_task, pWrk_pri, pSync_pri)
+        value = pri_output
+    ELSE
+        sec_input = value 
+        CALL SHMEM_REAL8_MAX_TO_ALL(sec_output, sec_input, 1, 0, 0, parallel%max_task, pWrk_sec, pSync_sec)
+        value = sec_output
+    ENDIF
 
-  CALL SHMEM_REAL8_MAX_TO_ALL(max_final, max_value, 1, 0, 0, parallel%max_task, pWrk_max, pSync_max)
-
-  value = max_final
+    use_primary = .NOT. use_primary
 
 END SUBROUTINE clover_max
 
 SUBROUTINE clover_allgather(value,values)
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  REAL(KIND=8) :: value, values(parallel%max_task)
+    REAL(KIND=8) :: value, values(parallel%max_task)
 
-  values(1)=value ! Just to ensure it will work in serial
+    values(1)=value ! Just to ensure it will work in serial
 
-  CALL SHMEM_FCOLLECT8(values, value, 1, 0, 0, parallel%max_task, pSync_collect)
+    CALL SHMEM_FCOLLECT8(values, value, 1, 0, 0, parallel%max_task, pSync_collect)
 
 END SUBROUTINE clover_allgather
 
 SUBROUTINE clover_check_error(error)
 
-  IMPLICIT NONE
+    IMPLICIT NONE
 
-  INTEGER :: error
+    REAL(KIND=8) :: error
 
-  error_value = error
+    IF (use_primary) THEN
+        pri_input = error
+        CALL SHMEM_REAL8_MAX_TO_ALL(pri_output, pri_input, 1, 0, 0, parallel%max_task, pWrk_pri, pSync_pri)
+        error = pri_output
+    ELSE
+        sec_input = error
+        CALL SHMEM_REAL8_MAX_TO_ALL(sec_output, sec_input, 1, 0, 0, parallel%max_task, pWrk_sec, pSync_sec)
+        error = sec_output
+    ENDIF
 
-  CALL SHMEM_INT4_MAX_TO_ALL(error_final, error_value, 1, 0, 0, parallel%max_task, pWrk_error, pSync_error)
-
-  error = error_final
-
+    use_primary = .NOT. use_primary
+    
 END SUBROUTINE clover_check_error
 
 

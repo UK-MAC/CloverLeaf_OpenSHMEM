@@ -63,7 +63,7 @@ MODULE definitions_module
 
    LOGICAL      :: advect_x
 
-   INTEGER      :: error_condition
+   REAL(KIND=8) :: error_condition
 
    INTEGER      :: test_problem
    LOGICAL      :: complete
