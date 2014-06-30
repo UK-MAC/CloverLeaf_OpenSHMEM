@@ -97,7 +97,7 @@ MODULE definitions_module
    INTEGER      :: end_step
 
    REAL(KIND=8) :: dtold          &
-                  ,dt             &
+                  !,dt             &
                   ,time           &
                   ,dtinit         &
                   ,dtmin          &
