@@ -43,6 +43,7 @@ MODULE clover_module
 
     REAL(KIND=8) :: pri_input, pri_output
     REAL(KIND=8) :: sec_input, sec_output
+    REAL(KIND=8) :: vol, mass, press, ie, ke
 
     REAL(KIND=8) :: pWrk_pri(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_pri(SHMEM_REDUCE_SYNC_SIZE)
@@ -57,7 +58,9 @@ MODULE clover_module
 
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    COMMON /COLL/ pri_input, pri_output, sec_input, sec_output
+    COMMON /COLL/ pri_input, pri_output, sec_input, sec_output, &
+                  vol, mass, press, ie, ke
+
 
 CONTAINS
 
@@ -656,16 +659,12 @@ SUBROUTINE clover_sum(value)
 
     REAL(KIND=8) :: value
 
+    !value will be different each time as called with a different variable within field summary 
+
     IF (use_primary) THEN
-        pri_input = value
-        pri_output = 0
-        CALL SHMEM_REAL8_SUM_TO_ALL(pri_output,pri_input,1,0,0,parallel%max_task,pWrk_pri,pSync_pri)
-        value = pri_output
+        CALL SHMEM_REAL8_SUM_TO_ALL(value,value,1,0,0,parallel%max_task,pWrk_pri,pSync_pri)
     ELSE
-        sec_input = value
-        sec_output = 0
-        CALL SHMEM_REAL8_SUM_TO_ALL(sec_output,sec_input,1,0,0,parallel%max_task,pWrk_sec,pSync_sec)
-        value = sec_output
+        CALL SHMEM_REAL8_SUM_TO_ALL(value,value,1,0,0,parallel%max_task,pWrk_sec,pSync_sec)
     ENDIF
     
     use_primary = .NOT. use_primary
