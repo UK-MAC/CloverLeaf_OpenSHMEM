@@ -39,27 +39,39 @@ MODULE clover_module
 
     INCLUDE 'mpp/shmem.fh'
 
+    INTEGER, PARAMETER :: NR = 1
+
     REAL(KIND=8) :: sum_total, sum_value
     REAL(KIND=8) :: min_value, min_final
     REAL(KIND=8) :: max_value, max_final
     INTEGER      :: error_value, error_final
 
-    REAL(KIND=8) :: pWrk_sum(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    REAL(KIND=8) :: pWrk_sum(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_sum /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
-    REAL(KIND=8) :: pWrk_min(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    REAL(KIND=8) :: pWrk_min(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_min(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_min /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
-    REAL(KIND=8) :: pWrk_max(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    REAL(KIND=8) :: pWrk_max(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_max(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_max /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
-    INTEGER :: pWrk_error(MAX(1/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
+    INTEGER :: pWrk_error(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_error(SHMEM_REDUCE_SYNC_SIZE)
+    DATA pSync_error /SHMEM_REDUCE_SYNC_SIZE*SHMEM_SYNC_VALUE/
 
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    INTEGER(KIND=4) :: right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
-    COMMON/ARRAY_FLAG/right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+    COMMON /COLL/ pWrk_sum, pSync_sum, pWrk_min, pSync_min, pWrk_max, pSync_max, &
+                  sum_total, sum_value, min_value, min_final, max_value, max_final, &
+                  error_value, error_final
+
+    INTEGER(KIND=4) :: right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready 
+    INTEGER(KIND=4) :: right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
+    COMMON /ARRAY_FLAG/ right_pe_ready, left_pe_ready, top_pe_ready, bottom_pe_ready, &
+                        right_pe_written, left_pe_written, top_pe_written, bottom_pe_written 
     ! 1 = false 0 = true
 
 CONTAINS
@@ -72,7 +84,9 @@ END SUBROUTINE clover_barrier
 
 SUBROUTINE clover_abort
 
-    CALL SHMEM_FINALIZE
+#ifdef ENABLE_SHMEM_FINALIZE
+  CALL SHMEM_FINALIZE
+#endif
 
 END SUBROUTINE clover_abort
 
@@ -83,7 +97,9 @@ SUBROUTINE clover_finalize
   CALL FLUSH(6)
   CALL FLUSH(g_out)
 
+#ifdef ENABLE_SHMEM_FINALIZE
   CALL SHMEM_FINALIZE
+#endif
 
 END SUBROUTINE clover_finalize
 
@@ -383,13 +399,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_left)-1
 
-            CALL SHMEM_PUT4_NB(right_pe_ready, 0, 1, receiver) 
+            CALL SHMEM_PUT4(right_pe_ready, 0, 1, receiver) 
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
-            CALL SHMEM_PUT4_NB(left_pe_ready, 0, 1, receiver)
+            CALL SHMEM_PUT4(left_pe_ready, 0, 1, receiver)
         ENDIF
 
 
@@ -476,9 +492,9 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
 
             ELSE
                 CALL SHMEM_IPUT64(field(chunks(chunk)%field%x_min-1,chunks(chunk)%field%y_min-depth), &
-                                     field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
-                                     array_width, array_width,                                  &
-                                     num_elements, receiver)
+                                  field(chunks(chunk)%field%x_max,chunks(chunk)%field%y_min-depth), &
+                                  array_width, array_width,                                  &
+                                  num_elements, receiver)
                 !WRITE(*,*) "Task: ", parallel%task, " first send to right to: ", receiver, " stride: ", array_width, " depth: ", depth, &
                 !                                                " source x: ", chunks(chunk)%field%x_max, &
                 !                                                " source y: ", chunks(chunk)%field%y_min-depth, &
@@ -511,13 +527,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
-            CALL SHMEM_PUT4_NB(right_pe_written, 0, 1, receiver)
+            CALL SHMEM_PUT4(right_pe_written, 0, 1, receiver)
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
-            CALL SHMEM_PUT4_NB(left_pe_written, 0, 1, receiver)
+            CALL SHMEM_PUT4(left_pe_written, 0, 1, receiver)
         ENDIF
     ENDIF
 
@@ -549,13 +565,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
-            CALL SHMEM_PUT4_NB(top_pe_ready, 0, 1, receiver)
+            CALL SHMEM_PUT4(top_pe_ready, 0, 1, receiver)
         ENDIF
     
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
-            CALL SHMEM_PUT4_NB(bottom_pe_ready, 0, 1, receiver)
+            CALL SHMEM_PUT4(bottom_pe_ready, 0, 1, receiver)
         ENDIF
     ENDIF
 
@@ -579,9 +595,9 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             !                            " target x: ", chunks(chunk)%field%x_min-depth, &
             !                            " target y: ", chunks(chunk)%field%y_max+y_inc+1 
 
-            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
-                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
-                                size, receiver)
+            CALL SHMEM_PUT64(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+                             field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
+                             size, receiver)
 
         ENDIF
 
@@ -600,9 +616,9 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
             !                            " target y: ", chunks(chunk)%field%y_min-depth
                                         
 
-            CALL SHMEM_PUT64_NB(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
-                                field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
-                                size, receiver)
+            CALL SHMEM_PUT64(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+                             field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
+                             size, receiver)
         ENDIF
 
     ENDIF
@@ -621,13 +637,13 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
-            CALL SHMEM_PUT4_NB(top_pe_written, 0, 1, receiver)
+            CALL SHMEM_PUT4(top_pe_written, 0, 1, receiver)
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
-            CALL SHMEM_PUT4_NB(bottom_pe_written, 0, 1, receiver)
+            CALL SHMEM_PUT4(bottom_pe_written, 0, 1, receiver)
         ENDIF
     ENDIF
 
@@ -666,7 +682,6 @@ SUBROUTINE clover_sum(value)
 
   REAL(KIND=8) :: total
 
-  pSync_sum = SHMEM_SYNC_VALUE
   sum_value=value
   sum_total=0
 
@@ -682,7 +697,6 @@ SUBROUTINE clover_min(value)
 
   REAL(KIND=8) :: value
 
-  pSync_min = SHMEM_SYNC_VALUE
   min_value = value
 
   CALL SHMEM_REAL8_MIN_TO_ALL(min_final, min_value, 1, 0, 0, parallel%max_task, pWrk_min, pSync_min)
@@ -697,7 +711,6 @@ SUBROUTINE clover_max(value)
 
   REAL(KIND=8) :: value
 
-  pSync_max = SHMEM_SYNC_VALUE
   max_value = value
 
   CALL SHMEM_REAL8_MAX_TO_ALL(max_final, max_value, 1, 0, 0, parallel%max_task, pWrk_max, pSync_max)
@@ -724,7 +737,6 @@ SUBROUTINE clover_check_error(error)
 
   INTEGER :: error
 
-  pSync_error = SHMEM_SYNC_VALUE
   error_value = error
 
   CALL SHMEM_INT4_MAX_TO_ALL(error_final, error_value, 1, 0, 0, parallel%max_task, pWrk_error, pSync_error)
@@ -735,3 +747,4 @@ END SUBROUTINE clover_check_error
 
 
 END MODULE clover_module
+
