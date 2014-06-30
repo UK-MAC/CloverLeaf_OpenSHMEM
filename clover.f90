@@ -41,10 +41,10 @@ MODULE clover_module
 
     INTEGER, PARAMETER :: NR = 1
 
-  REAL(KIND=8) :: sum_total, sum_value
-  REAL(KIND=8) :: min_value, min_final
-  REAL(KIND=8) :: max_value, max_final
-  INTEGER      :: error_value, error_final
+    REAL(KIND=8) :: sum_total, sum_value
+    REAL(KIND=8) :: min_value, min_final
+    REAL(KIND=8) :: max_value, max_final
+    INTEGER      :: error_value, error_final
 
     REAL(KIND=8) :: pWrk_sum(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
     INTEGER :: pSync_sum(SHMEM_REDUCE_SYNC_SIZE)
@@ -667,7 +667,6 @@ SUBROUTINE clover_sum(value)
 
   REAL(KIND=8) :: total
 
-  !pSync_sum = SHMEM_SYNC_VALUE
   sum_value=value
   sum_total=0
 
@@ -683,7 +682,6 @@ SUBROUTINE clover_min(value)
 
   REAL(KIND=8) :: value
 
-  !pSync_min = SHMEM_SYNC_VALUE
   min_value = value
 
   CALL SHMEM_REAL8_MIN_TO_ALL(min_final, min_value, 1, 0, 0, parallel%max_task, pWrk_min, pSync_min)
@@ -698,7 +696,6 @@ SUBROUTINE clover_max(value)
 
   REAL(KIND=8) :: value
 
-  !pSync_max = SHMEM_SYNC_VALUE
   max_value = value
 
   CALL SHMEM_REAL8_MAX_TO_ALL(max_final, max_value, 1, 0, 0, parallel%max_task, pWrk_max, pSync_max)
@@ -725,7 +722,6 @@ SUBROUTINE clover_check_error(error)
 
   INTEGER :: error
 
-  !pSync_error = SHMEM_SYNC_VALUE
   error_value = error
 
   CALL SHMEM_INT4_MAX_TO_ALL(error_final, error_value, 1, 0, 0, parallel%max_task, pWrk_error, pSync_error)
