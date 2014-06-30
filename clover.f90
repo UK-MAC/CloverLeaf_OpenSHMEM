@@ -41,8 +41,6 @@ MODULE clover_module
 
     INTEGER, PARAMETER :: NR = 1
 
-    REAL(KIND=8) :: pri_input, pri_output
-    REAL(KIND=8) :: sec_input, sec_output
     REAL(KIND=8) :: vol, mass, press, ie, ke, dt
 
     REAL(KIND=8) :: pWrk_pri(MAX(NR/2+1, SHMEM_REDUCE_MIN_WRKDATA_SIZE))
@@ -55,12 +53,9 @@ MODULE clover_module
 
     LOGICAL :: use_primary 
 
-
     INTEGER :: pSync_collect(SHMEM_COLLECT_SYNC_SIZE)
 
-    COMMON /COLL/ pri_input, pri_output, sec_input, sec_output, &
-                  vol, mass, press, ie, ke, dt
-
+    COMMON /COLL/ vol, mass, press, ie, ke, dt
 
 CONTAINS
 
@@ -723,13 +718,9 @@ SUBROUTINE clover_check_error(error)
     REAL(KIND=8) :: error
 
     IF (use_primary) THEN
-        pri_input = error
-        CALL SHMEM_REAL8_MAX_TO_ALL(pri_output, pri_input, 1, 0, 0, parallel%max_task, pWrk_pri, pSync_pri)
-        error = pri_output
+        CALL SHMEM_REAL8_MAX_TO_ALL(error, error, 1, 0, 0, parallel%max_task, pWrk_pri, pSync_pri)
     ELSE
-        sec_input = error
-        CALL SHMEM_REAL8_MAX_TO_ALL(sec_output, sec_input, 1, 0, 0, parallel%max_task, pWrk_sec, pSync_sec)
-        error = sec_output
+        CALL SHMEM_REAL8_MAX_TO_ALL(error, error, 1, 0, 0, parallel%max_task, pWrk_sec, pSync_sec)
     ENDIF
 
     use_primary = .NOT. use_primary
