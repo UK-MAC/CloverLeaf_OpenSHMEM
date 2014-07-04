@@ -97,6 +97,7 @@ SUBROUTINE clover_init_comms
     IMPLICIT NONE
 
     INTEGER :: err,rank,size
+    INTEGER :: SHMEM_MY_PE, SHMEM_N_PES
 
     right_pe_ready = 1
     left_pe_ready = 1
