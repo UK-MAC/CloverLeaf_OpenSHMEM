@@ -679,35 +679,67 @@ SUBROUTINE clover_exchange_send_async(chunk, depth, fields)
 
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(top_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(top_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(bottom_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(bottom_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_left_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_bottom_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_bottom_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_right_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_bottom_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_bottom_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_right_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_top_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_top_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_left_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_top_rcv_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_top_rcv_flag, 1, 1, receiver)
+#endif
     ENDIF
 
 END SUBROUTINE clover_exchange_send_async
@@ -795,35 +827,67 @@ SUBROUTINE clover_exchange_receive_async(chunk, depth, fields)
 
     IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(top_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(top_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(bottom_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(bottom_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
         receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_left_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_bottom_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_bottom_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_right_top) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_bottom_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_bottom_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_right_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(left_top_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(left_top_write_flag, 1, 1, receiver)
+#endif
     ENDIF
     IF ( (chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) .AND. (chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) ) THEN
         receiver = chunks(chunk)%chunk_neighbours(chunk_left_bottom) - 1
+#ifdef CRAY_NONBLOCK
+        CALL SHMEM_PUT4_NB(right_top_write_flag, 1, 1, receiver)
+#else
         CALL SHMEM_PUT4(right_top_write_flag, 1, 1, receiver)
+#endif
     ENDIF
 
 END SUBROUTINE clover_exchange_receive_async
@@ -1478,7 +1542,11 @@ SUBROUTINE clover_exchange_write_message_left(chunk, depth, receiver, topedge, b
     CALL pack_left_buffer_seq(chunk, depth, x_inc, y_inc, left_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(right_rcv_buffer, left_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(right_rcv_buffer, left_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_left
 
@@ -1513,7 +1581,11 @@ SUBROUTINE clover_exchange_write_message_right(chunk, depth, receiver, topedge, 
     CALL pack_right_buffer_seq(chunk, depth, x_inc, y_inc, right_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(left_rcv_buffer, right_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(left_rcv_buffer, right_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_right
 
@@ -1548,7 +1620,11 @@ SUBROUTINE clover_exchange_write_message_bottom(chunk, depth, receiver, leftedge
     CALL pack_bottom_buffer_seq(chunk, depth, x_inc, y_inc, bottom_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(top_rcv_buffer, bottom_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(top_rcv_buffer, bottom_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_bottom
 
@@ -1583,7 +1659,11 @@ SUBROUTINE clover_exchange_write_message_top(chunk, depth, receiver, leftedge, r
     CALL pack_top_buffer_seq(chunk, depth, x_inc, y_inc, top_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(bottom_rcv_buffer, top_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(bottom_rcv_buffer, top_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_top
 
@@ -1617,7 +1697,11 @@ SUBROUTINE clover_exchange_write_message_left_top(chunk, depth, receiver, size, 
     CALL pack_left_top_buffer_seq(chunk, depth, x_inc, y_inc, left_top_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(right_bottom_rcv_buffer, left_top_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(right_bottom_rcv_buffer, left_top_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_left_top
 
@@ -1650,7 +1734,11 @@ SUBROUTINE clover_exchange_write_message_right_top(chunk, depth, receiver, size,
     CALL pack_right_top_buffer_seq(chunk, depth, x_inc, y_inc, right_top_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(left_bottom_rcv_buffer, right_top_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(left_bottom_rcv_buffer, right_top_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_right_top
 
@@ -1683,7 +1771,11 @@ SUBROUTINE clover_exchange_write_message_right_bottom(chunk, depth, receiver, si
     CALL pack_right_bottom_buffer_seq(chunk, depth, x_inc, y_inc, right_bottom_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(left_top_rcv_buffer, right_bottom_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(left_top_rcv_buffer, right_bottom_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_right_bottom
 
@@ -1716,7 +1808,11 @@ SUBROUTINE clover_exchange_write_message_left_bottom(chunk, depth, receiver, siz
     CALL pack_left_bottom_buffer_seq(chunk, depth, x_inc, y_inc, left_bottom_snd_buffer, field)
 
     ! send buffer 
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB(right_top_rcv_buffer, left_bottom_snd_buffer, size, receiver)
+#else
     CALL SHMEM_PUT64(right_top_rcv_buffer, left_bottom_snd_buffer, size, receiver)
+#endif
 
 END SUBROUTINE clover_exchange_write_message_left_bottom
 
