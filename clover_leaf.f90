@@ -48,12 +48,12 @@ PROGRAM clover_leaf
   IF(parallel%boss)THEN
       WRITE(*,*)
       WRITE(*,'(a15,f8.3)') 'Clover Version ',g_version
-      WRITE(*,'(a50)') 'SHMEM Buffers Global Sync Version'
+      WRITE(*,'(a33)') 'SHMEM Buffers Global Sync Version'
       WRITE(*,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
       WRITE(*,*)
       WRITE(0,*)
       WRITE(0,'(a15,f8.3)') 'Clover Version ',g_version
-      WRITE(0,'(a50)') 'SHMEM Buffers Global Sync Version'
+      WRITE(0,'(a33)') 'SHMEM Buffers Global Sync Version'
       WRITE(0,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
       WRITE(0,*)
   ENDIF

@@ -47,7 +47,7 @@ SUBROUTINE initialise
   IF(parallel%boss)THEN
       WRITE(g_out,*)
       WRITE(g_out,'(a15,f8.3)') 'Clover Version ',g_version
-      WRITE(g_out,'(a50)') 'SHMEM Buffers Global Sync Version'
+      WRITE(g_out,'(a33)') 'SHMEM Buffers Global Sync Version'
       WRITE(g_out,'(a14,i6)') 'Task Count ',parallel%max_task !MPI
       WRITE(g_out,*)
       WRITE(*,*)'Output file clover.out opened. All output will go there.'
