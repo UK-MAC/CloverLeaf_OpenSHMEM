@@ -441,7 +441,12 @@ SUBROUTINE clover_exchange_top_put(depth, x_inc, y_inc, size, field, chunk)
 
     receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
-    CALL SHMEM_PUT64(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB( &
+#else
+    CALL SHMEM_PUT64( &
+#endif
+                     field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min-depth), &
                      field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+1-depth), &
                      size, receiver)
 
@@ -456,7 +461,12 @@ SUBROUTINE clover_exchange_bottom_put(depth, x_inc, y_inc, size, field, chunk)
 
     receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
-    CALL SHMEM_PUT64(field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
+#ifdef CRAY_NONBLOCK
+    CALL SHMEM_PUT64_NB( &
+#else
+    CALL SHMEM_PUT64( &
+#endif
+                     field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_max+y_inc+1), &
                      field(chunks(chunk)%field%x_min-depth,chunks(chunk)%field%y_min+y_inc), &
                      size, receiver)
 
@@ -516,13 +526,21 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(right_pe_ready, 0, 1, receiver) 
+#else
             CALL SHMEM_PUT4(right_pe_ready, 0, 1, receiver) 
+#endif
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(left_pe_ready, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(left_pe_ready, 0, 1, receiver)
+#endif
         ENDIF
 
 
@@ -580,13 +598,21 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_left).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_left) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(right_pe_written, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(right_pe_written, 0, 1, receiver)
+#endif
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_right).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_right) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(left_pe_written, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(left_pe_written, 0, 1, receiver)
+#endif
         ENDIF
 
 
@@ -611,13 +637,21 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(top_pe_ready, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(top_pe_ready, 0, 1, receiver)
+#endif
         ENDIF
     
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(bottom_pe_ready, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(bottom_pe_ready, 0, 1, receiver)
+#endif
         ENDIF
 
 
@@ -669,13 +703,21 @@ SUBROUTINE clover_exchange_message(chunk,field,depth,field_type)
         IF(chunks(chunk)%chunk_neighbours(chunk_bottom).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_bottom) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(top_pe_written, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(top_pe_written, 0, 1, receiver)
+#endif
         ENDIF
 
         IF(chunks(chunk)%chunk_neighbours(chunk_top).NE.external_face) THEN
             receiver=chunks(chunk)%chunk_neighbours(chunk_top) - 1
 
+#ifdef CRAY_NONBLOCK
+            CALL SHMEM_PUT4_NB(bottom_pe_written, 0, 1, receiver)
+#else
             CALL SHMEM_PUT4(bottom_pe_written, 0, 1, receiver)
+#endif
         ENDIF
 
 
