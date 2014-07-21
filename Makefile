@@ -130,17 +130,17 @@ ifdef IEEE
 endif
 
 ifdef FENCE
-  SHMEM_FENCE = -D FENCE_NOT_QUIET
+  SHMEM_FENCE = -DFENCE_NOT_QUIET
 endif
 
 ifdef NONBLOCKINGPUTS
-  PUTS_CRAY     = -DCRAY_NONBLOCK
-  I3E_SUN       = 
-  I3E_GNU       =
-  I3E_CRAY      =
-  I3E_PGI       =
-  I3E_PATHSCALE =
-  I3E_XL        =
+  PUTS_INTEL     = 
+  PUTS_SUN       = 
+  PUTS_GNU       =
+  PUTS_CRAY      = -DCRAY_NONBLOCK
+  PUTS_PGI       =
+  PUTS_PATHSCALE =
+  PUTS_XL        =
   PUTS=$(PUTS_$(COMPILER))
 endif
 
